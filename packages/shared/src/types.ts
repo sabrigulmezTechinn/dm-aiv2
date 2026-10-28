@@ -268,6 +268,8 @@ export interface NpcMemory {
   notes: string[];
   /** Whether the NPC is currently in the scene. */
   present: boolean;
+  /** The player has met this NPC (shown in the journal). */
+  known?: boolean;
   alive: boolean;
   x?: number;
   y?: number;
@@ -349,6 +351,7 @@ export type CombatAction =
   | { kind: 'use_item'; itemUid: string }
   | { kind: 'second_wind' }
   | { kind: 'action_surge' }
+  | { kind: 'turn_undead' }
   | { kind: 'end_turn' };
 
 // ---------------------------------------------------------------------------
@@ -388,7 +391,11 @@ export type PlayerAction =
   | { type: 'move'; x: number; y: number }
   | { type: 'combat'; action: CombatAction }
   | { type: 'death_save' }
-  | { type: 'rest'; kind: 'short' | 'long' };
+  | { type: 'rest'; kind: 'short' | 'long' }
+  | { type: 'continue' }
+  | { type: 'use_item'; itemUid: string }
+  | { type: 'cast'; spellId: string }
+  | { type: 'equip'; itemUid: string };
 
 export type CampaignStatus = 'active' | 'victory' | 'defeat' | 'abandoned';
 
@@ -409,6 +416,12 @@ export interface CampaignView {
   combat: CombatState | null;
   /** Combatant id of the player in combat. */
   playerCombatantId: string | null;
+  /** Tiles the player can move to right now (combat only). */
+  moveTargets: { x: number; y: number }[];
+  /** The DM has unanswered work queued (e.g. after a network error). */
+  needsContinue: boolean;
+  /** Short line shown when the campaign has ended. */
+  ending: string | null;
   pending: PendingInput | null;
   log: LogEntry[];
   npcs: NpcMemory[];

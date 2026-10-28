@@ -1060,6 +1060,8 @@ export function playerAction(state: CombatState, ctx: CombatCtx, action: CombatA
       res.events.push(tx(ctx.locale, 'surge', { a: c.name }));
       break;
     }
+    case 'turn_undead':
+      return turnUndead(state, ctx);
     case 'end_turn': {
       advanceTurn(state, ctx, res);
       merge(res, runMonsters(state, ctx));
