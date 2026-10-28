@@ -17,6 +17,9 @@ importers:
 
   packages/mapgen:
     dependencies:
+      '@dmai/rules':
+        specifier: workspace:*
+        version: link:../rules
       '@dmai/shared':
         specifier: workspace:*
         version: link:../shared

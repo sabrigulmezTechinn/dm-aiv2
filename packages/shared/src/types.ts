@@ -232,6 +232,8 @@ export interface GameMap {
   spawn: { x: number; y: number };
   /** Ambient light 0..1. Taverns are bright, dungeons dark. */
   ambient: number;
+  /** Named spots used for placing NPCs and story objects, e.g. "behind_bar". */
+  anchors: Record<string, { x: number; y: number }>;
 }
 
 export interface Token {
