@@ -18,7 +18,7 @@ import type {
 } from '@dmai/shared';
 import { uid } from '@dmai/shared';
 import { MapGrid, computeVisible, emptyExplored, generateMap, maskMap, nearestFree, updateFog } from '@dmai/mapgen';
-import { darkvision, movableTiles, playerCombatantId, isPlayerTurn, type CombatCtx } from '@dmai/rules';
+import { MONSTERS, darkvision, movableTiles, playerCombatantId, isPlayerTurn, type CombatCtx } from '@dmai/rules';
 import type { Adventure } from '../adventures';
 
 export type Transcript = Anthropic.Beta.Messages.BetaMessageParam[];
@@ -243,7 +243,7 @@ export function tokens(state: CampaignState, character: Character, visible: Set<
         name: cb.name,
         x: cb.x,
         y: cb.y,
-        color: cb.kind === 'player' ? character.color : '#b33a3a',
+        color: cb.kind === 'player' ? character.color : MONSTERS[cb.refId]?.color ?? '#b33a3a',
         hp: cb.hp,
         maxHp: cb.maxHp,
         hostile: cb.team === 'enemy',

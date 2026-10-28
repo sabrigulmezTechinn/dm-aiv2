@@ -2,16 +2,19 @@
   "name": "dm-ai",
   "private": true,
   "version": "0.1.0",
-  "description": "AI Dungeon Master for D&D 5e — mobile and web",
+  "description": "AI Dungeon Master for D&D 5e \u2014 mobile and web",
   "packageManager": "pnpm@10.28.0",
-  "engines": { "node": ">=22.13" },
+  "engines": {
+    "node": ">=22.13"
+  },
   "scripts": {
     "dev:server": "pnpm --filter @dmai/server dev",
     "dev:app": "pnpm --filter @dmai/mobile start",
     "dev:web": "pnpm --filter @dmai/mobile web",
+    "build:web": "pnpm --filter @dmai/mobile export:web",
+    "start": "WEB_DIST=../mobile/dist pnpm --filter @dmai/server start",
     "typecheck": "pnpm -r --if-present typecheck",
-    "test": "pnpm -r --if-present test",
-    "lint": "pnpm -r --if-present lint"
+    "test": "pnpm -r --if-present test"
   },
   "devDependencies": {
     "typescript": "~5.9.3",

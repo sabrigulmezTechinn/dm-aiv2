@@ -8,6 +8,8 @@ export interface Config {
   effort: Effort;
   databasePath: string;
   corsOrigin: string;
+  /** Optional path to the exported web app (apps/mobile/dist) to serve from this server. */
+  webDist: string | undefined;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -24,5 +26,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     effort: ['low', 'medium', 'high', 'xhigh', 'max'].includes(effort) ? effort : 'medium',
     databasePath: env.DATABASE_PATH?.trim() || './data/dmai.db',
     corsOrigin: env.CORS_ORIGIN?.trim() || '*',
+    webDist: env.WEB_DIST?.trim() || undefined,
   };
 }
