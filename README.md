@@ -39,7 +39,7 @@ cp .env.example .env
 | `PORT` | `8787` | API portu |
 | `DATABASE_PATH` | `./data/dmai.db` | SQLite dosyası |
 | `WEB_DIST` | boş | Dışa aktarılmış web uygulamasını API ile aynı porttan sun |
-| `EXPO_PUBLIC_API_URL` | web'de `http://<host>:8787` | Uygulamanın bağlanacağı API |
+| `EXPO_PUBLIC_API_URL` | web'de `http://<host>:8787` | Uygulamanın bağlanacağı API. Komut satırında ya da `apps/mobile/.env` içinde verilir |
 
 ## Çalıştırma
 
@@ -51,7 +51,27 @@ pnpm dev:web      # Expo web
 pnpm dev:app      # Expo (telefon için QR kod)
 ```
 
-Telefonda denerken `EXPO_PUBLIC_API_URL` değerini bilgisayarın yerel ağ adresine ayarlayın (ör. `http://192.168.1.20:8787`). Android emülatörü varsayılan olarak `10.0.2.2` adresini kullanır.
+### Telefonda deneme
+
+Telefon ve bilgisayar aynı Wi-Fi ağında olmalı. Bilgisayarın yerel IP adresini öğrenin (ör. `192.168.1.20`).
+
+**Telefon tarayıcısıyla (en kolay):**
+
+```bash
+pnpm build:web
+pnpm start
+```
+
+Telefonda `http://192.168.1.20:8787` adresini açın. Web uygulaması API'yi aynı adresten bulur.
+
+**Expo Go ile (gerçek mobil uygulama):**
+
+```bash
+pnpm dev:server
+EXPO_PUBLIC_API_URL=http://192.168.1.20:8787 pnpm dev:app
+```
+
+Çıkan QR kodu telefondaki Expo Go uygulamasıyla okutun. `EXPO_PUBLIC_API_URL` değerini Expo kök `.env` dosyasından okumaz; komut satırında ya da `apps/mobile/.env` dosyasında verin. Android emülatörü varsayılan olarak `10.0.2.2` adresini kullanır.
 
 Tek süreçle web + API:
 
