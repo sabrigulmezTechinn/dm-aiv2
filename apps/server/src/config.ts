@@ -12,6 +12,12 @@ export interface Config {
   webDist: string | undefined;
 }
 
+/** Reads `--name=value` from the command line (works on every OS, unlike inline env vars). */
+function argValue(name: string): string | undefined {
+  const hit = process.argv.find((a) => a.startsWith(`${name}=`));
+  return hit ? hit.slice(name.length + 1).trim() || undefined : undefined;
+}
+
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const apiKey = env.ANTHROPIC_API_KEY?.trim() || undefined;
   const authToken = env.ANTHROPIC_AUTH_TOKEN?.trim() || undefined;
@@ -26,6 +32,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     effort: ['low', 'medium', 'high', 'xhigh', 'max'].includes(effort) ? effort : 'medium',
     databasePath: env.DATABASE_PATH?.trim() || './data/dmai.db',
     corsOrigin: env.CORS_ORIGIN?.trim() || '*',
-    webDist: env.WEB_DIST?.trim() || undefined,
+    webDist: env.WEB_DIST?.trim() || argValue('--web') || undefined,
   };
 }

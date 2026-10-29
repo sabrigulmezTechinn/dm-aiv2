@@ -12,7 +12,7 @@
     "dev:app": "pnpm --filter @dmai/mobile start",
     "dev:web": "pnpm --filter @dmai/mobile web",
     "build:web": "pnpm --filter @dmai/mobile export:web",
-    "start": "WEB_DIST=../mobile/dist pnpm --filter @dmai/server start",
+    "start": "pnpm --filter @dmai/server serve",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test"
   },

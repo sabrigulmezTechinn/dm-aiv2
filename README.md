@@ -24,11 +24,15 @@ Yapay zekâ Zindan Efendisi (Dungeon Master) ile oynanan, mobil ve web tabanlı 
 ## Kurulum
 
 ```bash
+git clone https://github.com/sabrigulmezTechinn/dm-aiv2
+cd dm-aiv2
+corepack enable
 pnpm install
-cp .env.example .env
 ```
 
-`.env` içinde `ANTHROPIC_API_KEY` boş bırakılırsa sunucu, internetsiz çalışan kurallı bir sahte DM (mock) ile açılır. Gerçek Claude anlatımı için anahtarı girin.
+`corepack enable` hata verirse `npm install -g pnpm` kullanın.
+
+İsteğe bağlı olarak kök klasörde bir `.env` dosyası oluşturun (`.env.example` dosyasını kopyalayın; Windows'ta `copy .env.example .env`). `ANTHROPIC_API_KEY` boş kalırsa ya da `.env` hiç yoksa sunucu, internetsiz çalışan kurallı bir sahte DM (mock) ile açılır. Gerçek Claude anlatımı için anahtarı girin.
 
 | Değişken | Varsayılan | Açıklama |
 |---|---|---|
@@ -37,48 +41,43 @@ cp .env.example .env
 | `ANTHROPIC_MODEL` | `claude-opus-5-5` | Kullanılacak model |
 | `DM_EFFORT` | `medium` | Düşünme eforu: `low`, `medium`, `high`, `xhigh`, `max` |
 | `PORT` | `8787` | API portu |
-| `DATABASE_PATH` | `./data/dmai.db` | SQLite dosyası |
+| `DATABASE_PATH` | `./data/dmai.db` | SQLite dosyası (`apps/server` klasörüne göre) |
 | `WEB_DIST` | boş | Dışa aktarılmış web uygulamasını API ile aynı porttan sun |
-| `EXPO_PUBLIC_API_URL` | web'de `http://<host>:8787` | Uygulamanın bağlanacağı API. Komut satırında ya da `apps/mobile/.env` içinde verilir |
+
+Uygulamanın bağlanacağı adres (`EXPO_PUBLIC_API_URL`) kök `.env` dosyasında değil, `apps/mobile/.env` dosyasında verilir; bkz. `apps/mobile/.env.example`.
 
 ## Çalıştırma
 
-Geliştirme (iki terminal):
-
-```bash
-pnpm dev:server   # API, http://localhost:8787
-pnpm dev:web      # Expo web
-pnpm dev:app      # Expo (telefon için QR kod)
-```
-
-### Telefonda deneme
-
-Telefon ve bilgisayar aynı Wi-Fi ağında olmalı. Bilgisayarın yerel IP adresini öğrenin (ör. `192.168.1.20`).
-
-**Telefon tarayıcısıyla (en kolay):**
+**Bilgisayarın tarayıcısında (en kolay):**
 
 ```bash
 pnpm build:web
 pnpm start
 ```
 
-Telefonda `http://192.168.1.20:8787` adresini açın. Web uygulaması API'yi aynı adresten bulur.
+Tarayıcıda http://localhost:8787 adresini açın.
 
-**Expo Go ile (gerçek mobil uygulama):**
+**Geliştirme modu (kod değiştikçe yenilenir), iki terminal:**
 
 ```bash
 pnpm dev:server
-EXPO_PUBLIC_API_URL=http://192.168.1.20:8787 pnpm dev:app
+pnpm dev:web
 ```
 
-Çıkan QR kodu telefondaki Expo Go uygulamasıyla okutun. `EXPO_PUBLIC_API_URL` değerini Expo kök `.env` dosyasından okumaz; komut satırında ya da `apps/mobile/.env` dosyasında verin. Android emülatörü varsayılan olarak `10.0.2.2` adresini kullanır.
+### Telefonda deneme
 
-Tek süreçle web + API:
+Telefon ve bilgisayar aynı Wi-Fi ağında olmalı. Bilgisayarın yerel IP adresini öğrenin (Windows'ta `ipconfig`, Mac'te `ipconfig getifaddr en0`; ör. `192.168.1.20`). Windows güvenlik duvarı sorarsa Node.js'e özel ağ izni verin.
 
-```bash
-pnpm build:web
-pnpm start        # http://localhost:8787
-```
+**Telefon tarayıcısıyla:** `pnpm build:web` ve `pnpm start` çalıştırın, telefonda `http://192.168.1.20:8787` adresini açın.
+
+**Expo Go ile (gerçek mobil uygulama):**
+
+1. Telefona Expo Go uygulamasını kurun.
+2. `apps/mobile/.env` dosyası oluşturup içine `EXPO_PUBLIC_API_URL=http://192.168.1.20:8787` yazın.
+3. Bir terminalde `pnpm dev:server`, diğerinde `pnpm dev:app` çalıştırın.
+4. Çıkan QR kodu Expo Go ile (iPhone'da kamera uygulamasıyla) okutun.
+
+Android emülatörü varsayılan olarak `10.0.2.2` adresini kullanır. Harita Expo Go'da görünmezse bir development build gerekir (`npx expo run:android` / `run:ios`).
 
 ## Test
 
