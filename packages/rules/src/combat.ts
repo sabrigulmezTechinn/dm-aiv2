@@ -391,7 +391,7 @@ function damagePlayer(state: CombatState, ctx: CombatCtx, amount: number, type: 
   let dmg = amount;
   if (type === 'poison' && RACES[c.race].traits.includes('poison_resilience')) dmg = Math.floor(dmg / 2);
   const wasDown = c.hp === 0;
-  const out = damageCharacter(c, dmg);
+  const out = damageCharacter(c, dmg, { massiveDamage: ctx.difficulty === 'hard' });
   if (wasDown && crit && c.status === 'alive') {
     c.deathSaves.failures += 1;
     if (c.deathSaves.failures >= 3) c.status = 'dead';
@@ -487,6 +487,8 @@ function doAttacks(state: CombatState, ctx: CombatCtx, m: Combatant, def: Monste
   for (const atk of list) {
     if (!atk) continue;
     if (ctx.character.status === 'dead') return;
+    // Easy mode: enemies never keep hitting a character who just went down.
+    if (ctx.character.hp === 0 && ctx.difficulty === 'easy') return;
     monsterAttack(state, ctx, m, def, atk, res);
   }
 }
@@ -908,6 +910,7 @@ export function useConsumable(c: Character, itemUid: string, locale: Locale, rng
   const def = inv ? getItem(inv.itemId) : undefined;
   if (!inv || !def || def.type !== 'gear' || !def.use) return { ...res, error: 'not_usable' };
   if (def.use.kind === 'heal') {
+    if (c.hp >= c.maxHp) return { ...res, error: 'full_hp' };
     const r = roll(def.use.dice, { rng, kind: 'heal', label: def.name[locale], actor: c.name });
     res.rolls.push(r);
     const gained = healCharacter(c, r.total);
@@ -943,15 +946,16 @@ export function rollDeathSave(state: CombatState | null, ctx: CombatCtx): Combat
   if (nat === 1 || (nat !== 20 && r.total < 10)) res.events.push(tx(ctx.locale, 'deathSaveFail', { f: Math.min(3, c.deathSaves.failures) }));
   if (c.deathSaves.failures >= 3) {
     c.status = 'dead';
-    res.events.push(tx(ctx.locale, 'died', { a: c.name }));
+    // In combat finishIfOver reports the death; outside combat report it here.
+    if (!state) res.events.push(tx(ctx.locale, 'died', { a: c.name }));
   } else if (c.deathSaves.successes >= needed && c.hp === 0) {
     if (!c.conditions.some((x) => x.id === 'stable')) c.conditions.push({ id: 'stable' });
     res.events.push(tx(ctx.locale, 'stable', { a: c.name }));
   }
   if (state) {
     syncPlayer(state, ctx);
-    // A death save uses the turn.
-    if (!finishIfOver(state, ctx, res)) {
+    // A death save uses the turn, unless a natural 20 brings the character back: then they act now.
+    if (!finishIfOver(state, ctx, res) && c.hp === 0) {
       advanceTurn(state, ctx, res);
       merge(res, runMonsters(state, ctx));
     }

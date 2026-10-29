@@ -99,6 +99,8 @@ Oyunun görsel kimliği "dijital masa"dır. Kapalı mekânlar (taverna, zindan, 
 | DC oyuncuya gösterilir mi | Evet | Hayır |
 | Düşman HP'si | %75 | %100 |
 | Stabilize olmak için başarı | 2 | 3 |
+| Büyük hasarla anında ölüm | Yok, oyuncu ölüm kurtarmasına düşer | Var (5e kuralı) |
+| Düşmanlar yerdeki oyuncuya saldırır mı | Hayır | Akıllı düşmanlar bazen |
 | Şıklarda kontrol ipucu | Beceri ve DC gösterilir | Sadece beceri |
 | DM tonu | Affedici, ipucu verir | Kurallara sıkı bağlı, ipucu az |
 

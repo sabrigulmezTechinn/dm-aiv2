@@ -40,6 +40,9 @@ export class MockModel implements ModelClient {
     // A follow-up call after non-pausing tools ran: just end the turn.
     const onlyResults = Array.isArray(last.content) && (last.content as Block[]).every((b) => b.type === 'tool_result');
     if (onlyResults && prev?.role === 'assistant') {
+      if (/DIED/.test(lastText)) {
+        return this.finish([toolUse('end_adventure', { outcome: 'defeat', epilogue: L(locale, 'Your hero falls before the fight has truly begun. The tale ends here.', 'Kahramanın daha savaş gerçekten başlamadan düşüyor. Hikâye burada bitiyor.') })], cb);
+      }
       return this.finish([toolUse('present_choices', { narration: this.afterTools(state, lastText), choices: this.choices(state, adventure) })], cb);
     }
     const blocks = this.decide(state, adventure, lastText, locale);

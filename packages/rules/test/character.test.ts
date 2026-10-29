@@ -66,6 +66,17 @@ describe('hp, xp and rests', () => {
     expect(c.status).toBe('dead');
   });
 
+  it('easy mode never kills outright from massive damage', () => {
+    const c = createCharacter('u1', wizardDraft);
+    const out = damageCharacter(c, 100, { massiveDamage: false });
+    expect(out.died).toBe(false);
+    expect(c.status).toBe('alive');
+    expect(c.hp).toBe(0);
+    damageCharacter(c, 100, { massiveDamage: false });
+    expect(c.status).toBe('alive');
+    expect(c.deathSaves.failures).toBe(1);
+  });
+
   it('half-orcs stay up once', () => {
     const c = createCharacter('u1', { ...fighterDraft, race: 'half_orc' });
     const out = damageCharacter(c, c.hp);

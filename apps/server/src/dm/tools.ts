@@ -173,7 +173,7 @@ function charSummary(c: Character): string {
   return `HP ${c.hp}/${c.maxHp}, gold ${c.gold}, level ${c.level}, XP ${c.xp}`;
 }
 
-export function handleDeath(ctx: TurnCtx, cause: string): void {
+export function handleDeath(ctx: TurnCtx, cause: string, log = true): void {
   const { state, character } = ctx;
   character.status = 'dead';
   character.hp = 0;
@@ -182,7 +182,8 @@ export function handleDeath(ctx: TurnCtx, cause: string): void {
   state.status = 'defeat';
   state.combat = null;
   state.pending = null;
-  sys(ctx, sx(state.locale, 'died', { name: character.name }), 'bad');
+  // The combat engine already logs its own death line.
+  if (log) sys(ctx, sx(state.locale, 'died', { name: character.name }), 'bad');
 }
 
 type Handler<K extends ToolName> = (input: z.infer<(typeof schemas)[K]>, ctx: TurnCtx) => ToolOutcome;
@@ -241,7 +242,7 @@ const handlers: { [K in Exclude<ToolName, 'present_choices' | 'request_check'>]:
     const { state, character } = ctx;
     const r = roll(input.dice, { rng: ctx.rng, kind: 'damage', label: input.reason, actor: character.name });
     logRolls(ctx, [r]);
-    const out = damageCharacter(character, r.total);
+    const out = damageCharacter(character, r.total, { massiveDamage: state.difficulty === 'hard' });
     sys(ctx, sx(state.locale, 'damage', { n: r.total, type: damageTypeName(input.damage_type, state.locale), reason: input.reason }), 'bad');
     if (character.status === 'dead') {
       handleDeath(ctx, input.reason);
@@ -391,7 +392,7 @@ const handlers: { [K in Exclude<ToolName, 'present_choices' | 'request_check'>]:
 export function applyCombatOutcome(ctx: TurnCtx, outcome: 'victory' | 'death' | 'captured' | 'ended', xp: number): string {
   const { state, character } = ctx;
   if (outcome === 'death') {
-    handleDeath(ctx, state.locale === 'tr' ? 'savaşta düştü' : 'fell in battle');
+    handleDeath(ctx, state.locale === 'tr' ? 'savaşta düştü' : 'fell in battle', false);
     return 'The player character DIED. Narrate a dignified death scene, then call end_adventure with outcome "defeat" and a short epilogue.';
   }
   if (outcome === 'captured') {

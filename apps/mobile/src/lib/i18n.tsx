@@ -165,6 +165,7 @@ const tr = {
   err_campaign_over: 'Bu macera sona erdi.',
   err_character_busy: 'Bu karakter zaten bir macerada.',
   err_in_combat: 'Savaş sırasında yapılamaz.',
+  err_full_hp: 'Canın zaten dolu.',
   err_generic: 'Bir şeyler ters gitti.',
 };
 
@@ -330,6 +331,7 @@ const en: Record<I18nKey, string> = {
   err_campaign_over: 'This adventure has ended.',
   err_character_busy: 'This character is already on an adventure.',
   err_in_combat: "Can't do that during combat.",
+  err_full_hp: 'You are already at full health.',
   err_generic: 'Something went wrong.',
 };
 

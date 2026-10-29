@@ -71,7 +71,7 @@ export default function Play() {
   };
 
   const abandon = () => {
-    const go = () => api.abandon(view.id).then(() => router.replace('/'));
+    const go = () => api.abandon(view.id).then(() => router.dismissTo('/'));
     if (Platform.OS === 'web') {
       if (window.confirm(t('abandonConfirm'))) void go();
     } else Alert.alert(t('abandon'), t('abandonConfirm'), [{ text: t('cancel'), style: 'cancel' }, { text: t('abandon'), style: 'destructive', onPress: () => void go() }]);
@@ -110,7 +110,7 @@ export default function Play() {
           <IconButton icon="close" label={t('close')} onPress={() => setError(null)} />
         </Row>
       ) : null}
-      <ActionPanel view={view} busy={busy} act={(a) => void act(a)} targeting={targeting} setTargeting={setTargeting} onHome={() => router.replace('/')} />
+      <ActionPanel view={view} busy={busy} act={(a) => void act(a)} targeting={targeting} setTargeting={setTargeting} onHome={() => router.dismissTo('/')} />
     </View>
   );
 
@@ -119,7 +119,7 @@ export default function Play() {
       <View style={{ paddingHorizontal: space(3), paddingTop: space(2), gap: space(2) }}>
         <Header
           title={view.scene.name}
-          onBack={() => router.replace('/')}
+          onBack={() => router.dismissTo('/')}
           right={
             <Row gap={2}>
               <IconButton icon="book-open-page-variant" label={t('journal')} onPress={() => setDrawer('journal')} testID="open-journal" />
@@ -165,7 +165,7 @@ export default function Play() {
             ) : (
               <JournalView view={view} />
             )}
-            {drawer === 'sheet' && view.status === 'active' ? <Button title={t('abandon')} kind="danger" icon="flag-checkered" onPress={abandon} /> : null}
+            {drawer === 'sheet' && view.status === 'active' ? <Button title={t('abandon')} kind="danger" icon="flag-checkered" onPress={abandon} testID="abandon" /> : null}
           </ScrollView>
         </SafeAreaView>
       </Modal>

@@ -135,7 +135,12 @@ export function IconButton({ icon, onPress, label, active, color, testID }: { ic
 
 export function Card({ children, style, onPress, selected, testID }: { children: React.ReactNode; style?: StyleProp<ViewStyle>; onPress?: PressableProps['onPress']; selected?: boolean; testID?: string }) {
   const body = [styles.card, selected && { borderColor: colors.gold, backgroundColor: colors.surface2 }, style];
-  if (!onPress) return <View style={body}>{children}</View>;
+  if (!onPress)
+    return (
+      <View testID={testID} style={body}>
+        {children}
+      </View>
+    );
   return (
     <Pressable testID={testID} accessibilityRole="button" onPress={onPress} style={({ pressed }) => [...body, pressed && { opacity: 0.85 }]}>
       {children}

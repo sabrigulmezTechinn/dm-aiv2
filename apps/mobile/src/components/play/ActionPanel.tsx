@@ -230,13 +230,13 @@ export function ActionPanel({
         ) : null}
         {menu === 'rest' ? (
           <Row>
-            <Button title={t('shortRest')} small kind="secondary" style={{ flex: 1 }} onPress={() => (setMenu(null), act({ type: 'rest', kind: 'short' }))} />
-            <Button title={t('longRest')} small kind="secondary" style={{ flex: 1 }} onPress={() => (setMenu(null), act({ type: 'rest', kind: 'long' }))} />
+            <Button title={t('shortRest')} small kind="secondary" style={{ flex: 1 }} testID="rest-short" onPress={() => (setMenu(null), act({ type: 'rest', kind: 'short' }))} />
+            <Button title={t('longRest')} small kind="secondary" style={{ flex: 1 }} testID="rest-long" onPress={() => (setMenu(null), act({ type: 'rest', kind: 'long' }))} />
             <Button title="×" small kind="ghost" onPress={() => setMenu(null)} />
           </Row>
         ) : null}
         <Row gap={2}>
-          <Button title="" icon="campfire" kind="ghost" small onPress={() => setMenu(menu === 'rest' ? null : 'rest')} disabled={busy} />
+          <Button title={t('rest')} icon="campfire" kind="ghost" small testID="rest-menu" onPress={() => setMenu(menu === 'rest' ? null : 'rest')} disabled={busy} />
           <TextInput
             testID="action-input"
             value={text}

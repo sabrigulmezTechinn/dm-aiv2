@@ -300,8 +300,12 @@ export interface DamageOutcome {
   relentless: boolean;
 }
 
-/** Applies damage to a character, handling temp HP, massive damage, relentless endurance and death saves. */
-export function damageCharacter(c: Character, amount: number): DamageOutcome {
+/**
+ * Applies damage to a character, handling temp HP, massive damage, relentless endurance and death saves.
+ * With `massiveDamage: false` (easy mode) overflow damage never kills outright.
+ */
+export function damageCharacter(c: Character, amount: number, opts: { massiveDamage?: boolean } = {}): DamageOutcome {
+  const massive = opts.massiveDamage ?? true;
   const out: DamageOutcome = { dealt: 0, dropped: false, died: false, relentless: false };
   if (c.status === 'dead' || amount <= 0) return out;
   let remaining = amount;
@@ -313,7 +317,7 @@ export function damageCharacter(c: Character, amount: number): DamageOutcome {
   out.dealt = amount;
   if (c.hp === 0) {
     // Damage while at 0 HP causes a death save failure (2 on a critical is handled by caller).
-    if (remaining >= c.maxHp) {
+    if (massive && remaining >= c.maxHp) {
       c.status = 'dead';
       out.died = true;
     } else if (remaining > 0) {
@@ -329,7 +333,7 @@ export function damageCharacter(c: Character, amount: number): DamageOutcome {
   const overflow = remaining - c.hp;
   c.hp = Math.max(0, c.hp - remaining);
   if (c.hp === 0) {
-    if (overflow >= c.maxHp) {
+    if (massive && overflow >= c.maxHp) {
       c.status = 'dead';
       out.died = true;
       return out;

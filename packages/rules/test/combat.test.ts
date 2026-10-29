@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createCharacter, damageCharacter } from '../src/character';
 import {
+  useConsumable,
   checkOutcome,
   isPlayerTurn,
   needsDeathSave,
@@ -103,6 +104,58 @@ describe('combat', () => {
     rollDeathSave(null, ctx);
     expect(character.conditions.some((x) => x.id === 'stable')).toBe(true);
     expect(checkOutcome(state, ctx)?.outcome).toBe('captured');
+  });
+
+  it('reports a death only once', () => {
+    const { ctx, state, character } = setup();
+    damageCharacter(character, character.hp);
+    state.turnIndex = state.order.indexOf(playerCombatantId(character));
+    ctx.rng = scriptedRng([1, 1, 1, 1]);
+    const all: string[] = [];
+    for (let i = 0; i < 3 && character.status === 'alive'; i++) {
+      state.turnIndex = state.order.indexOf(playerCombatantId(character));
+      all.push(...rollDeathSave(state, ctx).events);
+    }
+    expect(all.filter((e) => /has died/.test(e))).toHaveLength(1);
+  });
+
+  it('lets a character revived by a natural 20 act on that turn', () => {
+    const { ctx, state, character } = setup();
+    damageCharacter(character, character.hp);
+    state.turnIndex = state.order.indexOf(playerCombatantId(character));
+    ctx.rng = scriptedRng([20]);
+    rollDeathSave(state, ctx);
+    expect(character.hp).toBe(1);
+    expect(isPlayerTurn(state, ctx)).toBe(true);
+    expect(state.budget.action).toBe(true);
+  });
+
+  it('easy mode enemies stop their multiattack once the character is down', () => {
+    let exercised = 0;
+    for (let seed = 1; seed <= 40; seed++) {
+      const character = createCharacter('u1', wizardDraft);
+      character.hp = 1;
+      const ctx: CombatCtx = { character, grid: openGrid(), difficulty: 'easy', locale: 'en', rng: seededRng(seed) };
+      const { result } = startCombat(ctx, { enemies: [{ monsterId: 'bandit_captain', count: 1 }], playerPos: { x: 10, y: 10 }, surprise: 'enemies' });
+      const downed = result.events.findIndex((e) => /drops to 0 HP/.test(e));
+      if (downed < 0) continue;
+      exercised++;
+      const after = result.events.slice(downed + 1);
+      expect(after.some((e) => /(hits|misses|critical hit on) Ilyra/.test(e))).toBe(false);
+      expect(character.deathSaves.failures).toBe(0);
+    }
+    expect(exercised).toBeGreaterThan(0);
+  });
+
+  it('refuses to waste a healing potion at full health', () => {
+    const c = createCharacter('u1', fighterDraft);
+    const potion = c.inventory.find((i) => i.itemId === 'healing_potion')!;
+    expect(useConsumable(c, potion.uid, 'en').error).toBe('full_hp');
+    c.hp = 3;
+    const r = useConsumable(c, potion.uid, 'en');
+    expect(r.error).toBeUndefined();
+    expect(c.hp).toBeGreaterThan(3);
+    expect(c.inventory.some((i) => i.itemId === 'healing_potion')).toBe(false);
   });
 
   it('runs many full fights without throwing', () => {
