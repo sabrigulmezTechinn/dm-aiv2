@@ -212,7 +212,7 @@ export function ActionPanel({
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={panel}>
-        {view.needsContinue ? <Button title={t('continueStory')} icon="play" kind="secondary" loading={busy} onPress={() => act({ type: 'continue' })} testID="continue" /> : null}
+        {view.needsContinue ? <Button title={view.needsRetry ? t('retryButton') : t('continueStory')} icon="play" kind="secondary" loading={busy} onPress={() => act({ type: 'continue' })} testID="continue" /> : null}
         {pending?.type === 'choice' ? (
           <View style={{ gap: space(2) }}>
             {pending.choices.map((ch) => (
@@ -244,12 +244,12 @@ export function ActionPanel({
             onSubmitEditing={send}
             placeholder={t('typeAction')}
             placeholderTextColor={colors.faint}
-            editable={!busy}
+            editable={!busy && !view.needsRetry}
             returnKeyType="send"
             maxLength={600}
             style={{ flex: 1, minHeight: 44, backgroundColor: colors.surface2, borderColor: colors.border, borderWidth: 1, borderRadius: radius.md, paddingHorizontal: space(3), color: colors.text, fontSize: 15 }}
           />
-          <Button title="" icon="send" small onPress={send} disabled={busy || !text.trim()} testID="send" />
+          <Button title="" icon="send" small onPress={send} disabled={busy || view.needsRetry || !text.trim()} testID="send" />
         </Row>
       </View>
     </KeyboardAvoidingView>

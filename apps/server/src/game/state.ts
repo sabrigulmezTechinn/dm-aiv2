@@ -65,6 +65,8 @@ export interface CampaignState {
   heldResults: ToolResult[];
   /** A turn-ending tool call (present_choices / request_check) awaiting the player. */
   waitingTool: { id: string; name: string } | null;
+  /** Outgoing DM message whose first model call failed; Retry resends it verbatim. */
+  unsent?: { text: string } | null;
   /** Mechanical notes for the DM to see on the next call. */
   notes: string[];
   log: LogEntry[];
@@ -119,6 +121,7 @@ export function createCampaignState(params: {
     hiddenChoices: [],
     heldResults: [],
     waitingTool: null,
+    unsent: null,
     notes: [],
     log: [],
     ending: null,
@@ -299,7 +302,8 @@ export function toView(state: CampaignState, character: Character, adventure: Ad
     quests: Object.values(state.quests),
     facts: state.facts,
     busy,
-    needsContinue: state.heldResults.length > 0 && !state.waitingTool && state.status === 'active',
+    needsContinue: (state.heldResults.length > 0 && !state.waitingTool && state.status === 'active') || !!state.unsent,
+    needsRetry: !!state.unsent && state.status === 'active',
     ending: state.ending,
     createdAt: state.createdAt,
     updatedAt: state.updatedAt,

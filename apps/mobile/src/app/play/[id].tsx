@@ -20,7 +20,7 @@ export default function Play() {
   const { id, begin } = useLocalSearchParams<{ id: string; begin?: string }>();
   const { viewMode, setViewMode, api } = useApp();
   const { t } = useI18n();
-  const { view, live, busy, error, setError, act, rolls, shiftRoll } = usePlay(id);
+  const { view, live, busy, error, setError, act, rolls, shiftRoll, reload, networkError } = usePlay(id);
   const [targeting, setTargeting] = useState<Targeting>(null);
   const [drawer, setDrawer] = useState<'sheet' | 'journal' | null>(null);
   const { width, height } = useWindowDimensions();
@@ -48,7 +48,22 @@ export default function Play() {
       .map((c) => c.id);
   }, [view?.combat, targeting]);
 
-  if (!view) return error ? <Loading label={error} /> : <Loading />;
+  const retryConnection = () => {
+    setError(null);
+    began.current = false;
+    void reload();
+  };
+  if (!view) {
+    if (!error) return <Loading />;
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center', padding: space(4), gap: space(3) }}>
+        <Txt variant="body" style={{ textAlign: 'center' }}>
+          {error}
+        </Txt>
+        {networkError ? <Button title={t('retryButton')} icon="refresh" onPress={retryConnection} testID="retry-connection" /> : null}
+      </SafeAreaView>
+    );
+  }
 
   const myTurn = !!view.combat && view.combat.order[view.combat.turnIndex] === view.playerCombatantId;
   const onTileTap = (x: number, y: number) => {
@@ -107,6 +122,7 @@ export default function Play() {
           <Txt variant="small" style={{ flex: 1, color: '#f0b4aa' }}>
             {error}
           </Txt>
+          {networkError ? <Button title={t('retryButton')} icon="refresh" kind="secondary" small onPress={retryConnection} testID="retry-connection" /> : null}
           <IconButton icon="close" label={t('close')} onPress={() => setError(null)} />
         </Row>
       ) : null}

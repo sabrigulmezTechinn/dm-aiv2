@@ -166,14 +166,20 @@ export class GameEngine {
     const { state, character } = ctx;
     const loc = state.locale;
     const pending = state.pending;
+    if (state.unsent) {
+      // A failed DM message is waiting: only Retry (continue) is allowed.
+      if (action.type !== 'continue') throw new GameError('retry_pending');
+      await this.runDm(ctx, transcript, state.unsent.text, save);
+      return;
+    }
     if (pending?.type === 'check' && action.type !== 'roll') throw new GameError('roll_pending');
     if (pending?.type === 'death_save' && action.type !== 'death_save') throw new GameError('death_save_pending');
 
     switch (action.type) {
       case 'begin': {
         if (state.turn > 0 || transcript.length > 0) throw new GameError('already_started');
-        state.turn = 1;
         const text = `${setupMessage(state, character, ctx.adventure)}\n\n${stateBlock(state, character)}\n\nBegin the adventure: narrate the opening scene (where the hero is, the mood, the hook) and offer choices.`;
+        state.turn = 1;
         await this.runDm(ctx, transcript, text, save);
         return;
       }
@@ -325,7 +331,20 @@ export class GameEngine {
   // -------------------------------------------------------------------------
   // DM loop
 
+  /** Runs one DM turn and logs its duration and token usage. */
   private async runDm(ctx: TurnCtx, transcript: Transcript, text: string, save: () => void): Promise<void> {
+    const stats = { calls: 0, input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
+    const t0 = Date.now();
+    try {
+      await this.runDmLoop(ctx, transcript, text, save, stats);
+    } finally {
+      console.log(
+        `[dm] turn=${ctx.state.turn} campaign=${ctx.state.id} model=${this.model.name} ms=${Date.now() - t0} calls=${stats.calls} in=${stats.input} out=${stats.output} cache_read=${stats.cacheRead} cache_write=${stats.cacheWrite}`,
+      );
+    }
+  }
+
+  private async runDmLoop(ctx: TurnCtx, transcript: Transcript, text: string, save: () => void, stats: { calls: number; input: number; output: number; cacheRead: number; cacheWrite: number }): Promise<void> {
     const { state, character, adventure } = ctx;
     const userMsg: Anthropic.Beta.Messages.BetaMessageParam = {
       role: 'user',
@@ -355,11 +374,23 @@ export class GameEngine {
         );
       } catch (err) {
         console.error('[dm] model call failed', err instanceof Anthropic.APIError ? `${err.status} ${err.message}` : err);
-        addLog(state, { kind: 'system', text: sx(state.locale, 'dmError'), tone: 'bad' });
-        if (!committed) throw new GameError('dm_unavailable', 'The Dungeon Master is unavailable. Try again.');
+        addLog(state, { kind: 'system', text: sx(state.locale, committed ? 'dmError' : 'dmErrorRetry'), tone: 'bad' });
+        if (!committed) {
+          // Keep the exact outgoing message so Retry can resend it.
+          state.unsent = { text };
+          throw new GameError('dm_unavailable', 'The Dungeon Master is unavailable. Try again.');
+        }
         return;
       }
+      stats.calls += 1;
+      if (response.usage) {
+        stats.input += response.usage.input;
+        stats.output += response.usage.output;
+        stats.cacheRead += response.usage.cacheRead;
+        stats.cacheWrite += response.usage.cacheWrite;
+      }
       if (!committed) {
+        state.unsent = null;
         transcript.push(userMsg);
         state.heldResults = [];
         committed = true;

@@ -428,6 +428,9 @@ export interface CampaignView {
   quests: Quest[];
   facts: Fact[];
   busy: boolean;
+  // fix/dm-recovery
+  /** The last DM message failed to send; the text input is locked until Retry. */
+  needsRetry?: boolean;
   createdAt: number;
   updatedAt: number;
 }
