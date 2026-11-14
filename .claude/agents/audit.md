@@ -12,8 +12,9 @@ You are given a snapshot SHA: a commit whose parent is the user's HEAD and whose
 
 1. `git checkout --detach <sha>`
 2. `git show --stat <sha>` and `git show <sha>` to read the change.
-3. `pnpm install --frozen-lockfile` (a fresh worktree has no node_modules), then `pnpm typecheck`, then `pnpm test`. Run each as its own command.
-4. Read the diff for bugs: wrong logic, D&D 5e rule mistakes, missed call sites, broken types, missing tests.
+3. `pnpm install --frozen-lockfile` (a fresh worktree has no node_modules), then `pnpm typecheck`, then `pnpm -r --no-bail --if-present test` (keeps going after a failing package so every package's tests run). Run each as its own command.
+4. Use the Grep, Glob and Read tools (not Bash) to search call sites and read code. Keep Bash for the git and pnpm commands above, one command per call.
+5. Read the diff for bugs: wrong logic, D&D 5e rule mistakes, missed call sites, broken types, missing tests.
 
 Never edit files to make checks pass and never commit or push. Report:
 - PASS/FAIL for typecheck and tests, with failing output trimmed to what matters,
