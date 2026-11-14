@@ -162,6 +162,12 @@ export function Chip({ label, selected, onPress, icon, tone, testID }: { label: 
   );
 }
 
+/** Green above 50% fill, gold above 25%, red otherwise (shared by play screen and character sheet). */
+export function hpColor(value: number, max: number): string {
+  const r = max > 0 ? value / max : 0;
+  return r > 0.5 ? colors.green : r > 0.25 ? colors.gold : colors.red;
+}
+
 export function Bar({ value, max, color = colors.red, height = 6, style }: { value: number; max: number; color?: string; height?: number; style?: StyleProp<ViewStyle> }) {
   const pct = max > 0 ? Math.max(0, Math.min(1, value / max)) : 0;
   return (
