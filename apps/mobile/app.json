@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "DM-AI",
+    "slug": "dm-ai",
+    "scheme": "dmai",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#15110e",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "solutions.techinn.dmai"
+    },
+    "android": {
+      "package": "solutions.techinn.dmai",
+      "adaptiveIcon": {
+        "backgroundColor": "#15110e",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "output": "single",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-localization",
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}
