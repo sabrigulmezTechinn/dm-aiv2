@@ -39,6 +39,22 @@ export const NARRATION_FIELDS: Record<string, string[]> = {
   end_adventure: ['epilogue'],
 };
 
+/**
+ * True when resending the same request may succeed (network, timeouts, 408/409/429, 5xx,
+ * overloaded). False for rejections such as 400/401/403/404/413/422 that will repeat forever.
+ */
+export function isTransientModelError(err: unknown): boolean {
+  if (!(err instanceof Anthropic.APIError)) return true;
+  const s = err.status;
+  if (s === undefined) {
+    // Connection errors and in-stream error events carry no HTTP status.
+    const body = err.error as { type?: string; error?: { type?: string } } | undefined;
+    const type = body?.error?.type ?? body?.type;
+    return !type || !['invalid_request_error', 'authentication_error', 'permission_error', 'not_found_error', 'request_too_large'].includes(type);
+  }
+  return s === 408 || s === 409 || s === 429 || s >= 500;
+}
+
 function supportsDefaultFallback(model: string): boolean {
   return /^claude-(opus-5|fable-5|sonnet-5-5)/.test(model);
 }

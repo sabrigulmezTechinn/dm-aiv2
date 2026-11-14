@@ -67,7 +67,7 @@ export default function Play() {
 
   const myTurn = !!view.combat && view.combat.order[view.combat.turnIndex] === view.playerCombatantId;
   const onTileTap = (x: number, y: number) => {
-    if (busy || view.status !== 'active' || view.pending?.type === 'check' || view.pending?.type === 'death_save') return;
+    if (busy || view.needsRetry || view.status !== 'active' || view.pending?.type === 'check' || view.pending?.type === 'death_save') return;
     if (view.combat) {
       if (!myTurn || targeting) return;
       if (view.moveTargets.some((m) => m.x === x && m.y === y)) void act({ type: 'combat', action: { kind: 'move', x, y } });
@@ -76,7 +76,7 @@ export default function Play() {
     void act({ type: 'move', x, y });
   };
   const onTokenTap = (tokenId: string) => {
-    if (busy || view.status !== 'active') return;
+    if (busy || view.needsRetry || view.status !== 'active') return;
     const enemy = view.combat?.combatants[tokenId];
     if (view.combat && enemy && enemy.team === 'enemy' && !enemy.dead && myTurn && !view.pending) {
       const tg = targeting ?? { kind: 'attack' as const };
@@ -174,9 +174,9 @@ export default function Play() {
             {drawer === 'sheet' ? (
               <CharacterSheet
                 c={c}
-                onEquip={view.combat || busy ? undefined : (uid) => void act({ type: 'equip', itemUid: uid })}
-                onUse={busy ? undefined : (uid) => void act(view.combat ? { type: 'combat', action: { kind: 'use_item', itemUid: uid } } : { type: 'use_item', itemUid: uid })}
-                onCast={view.combat || busy ? undefined : (spellId) => void act({ type: 'cast', spellId })}
+                onEquip={view.combat || busy || view.needsRetry ? undefined : (uid) => void act({ type: 'equip', itemUid: uid })}
+                onUse={busy || view.needsRetry ? undefined : (uid) => void act(view.combat ? { type: 'combat', action: { kind: 'use_item', itemUid: uid } } : { type: 'use_item', itemUid: uid })}
+                onCast={view.combat || busy || view.needsRetry ? undefined : (spellId) => void act({ type: 'cast', spellId })}
               />
             ) : (
               <JournalView view={view} />

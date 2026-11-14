@@ -99,6 +99,7 @@ export class Api {
     try {
       res = Platform.OS === 'web' ? await fetch(url, init) : ((await expoFetch(url, init)) as unknown as typeof res);
     } catch (e) {
+      if ((e as { name?: string }).name === 'AbortError') throw e;
       throw new ApiError(0, 'network', (e as Error).message);
     }
     if (!res.ok) {
@@ -116,33 +117,40 @@ export class Api {
       const rest = flush ? '' : lines.pop() ?? '';
       for (const line of lines) {
         if (!line.trim()) continue;
+        let ev: TurnEvent;
         try {
-          onEvent(JSON.parse(line) as TurnEvent);
+          ev = JSON.parse(line) as TurnEvent;
         } catch {
-          // ignore malformed line
+          continue; // ignore malformed line
         }
+        onEvent(ev);
       }
       return rest;
     };
-    try {
-      if (res.body && typeof res.body.getReader === 'function') {
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buf = '';
-        for (;;) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          buf += decoder.decode(value, { stream: true });
-          buf = emitLines(buf, false);
-        }
-        buf += decoder.decode();
-        emitLines(buf, true);
-      } else {
-        emitLines(await res.text(), true);
+    // Only reading the response can fail with a network error; handler errors propagate as they are.
+    const readChunk = async <T,>(read: () => Promise<T>): Promise<T> => {
+      try {
+        return await read();
+      } catch (e) {
+        if ((e as { name?: string }).name === 'AbortError') throw e;
+        // The connection dropped mid-stream.
+        throw new ApiError(0, 'network', (e as Error).message);
       }
-    } catch (e) {
-      // The connection dropped mid-stream.
-      throw new ApiError(0, 'network', (e as Error).message);
+    };
+    if (res.body && typeof res.body.getReader === 'function') {
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+      for (;;) {
+        const { value, done } = await readChunk(() => reader.read());
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        buf = emitLines(buf, false);
+      }
+      buf += decoder.decode();
+      emitLines(buf, true);
+    } else {
+      emitLines(await readChunk(() => res.text()), true);
     }
   }
 }

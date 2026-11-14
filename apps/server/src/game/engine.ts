@@ -23,7 +23,7 @@ import { openDoorsOnPath, walkPath } from '@dmai/mapgen';
 import type { Store } from '../db';
 import { getAdventure, type Adventure } from '../adventures';
 import { sx } from '../i18n';
-import type { ModelClient } from '../dm/model';
+import { isTransientModelError, type ModelClient } from '../dm/model';
 import { PAUSING_TOOLS, applyCombatOutcome, parsePausing, runTool, toolDefinitions, type TurnCtx } from '../dm/tools';
 import { setupMessage, stateBlock, systemPrompt } from '../dm/prompt';
 import { addLog, combatCtx, createCampaignState, occupied, refreshVision, toView, type CampaignState, type ToolResult, type Transcript } from './state';
@@ -134,7 +134,8 @@ export class GameEngine {
     };
     this.busy.add(campaignId);
     try {
-      if (state.status !== 'active') throw new GameError('campaign_over');
+      // An ended campaign may still owe its closing narration: allow retrying that stored message.
+      if (state.status !== 'active' && !(state.unsent && action.type === 'continue')) throw new GameError('campaign_over');
       await this.dispatch(ctx, transcript, action, save);
       this.syncPending(ctx);
       save();
@@ -180,8 +181,8 @@ export class GameEngine {
     switch (action.type) {
       case 'begin': {
         if (state.turn > 0 || transcript.length > 0) throw new GameError('already_started');
-        const text = `${setupMessage(state, character, ctx.adventure)}\n\n${stateBlock(state, character)}\n\nBegin the adventure: narrate the opening scene (where the hero is, the mood, the hook) and offer choices.`;
         state.turn = 1;
+        const text = `${setupMessage(state, character, ctx.adventure)}\n\n${stateBlock(state, character)}\n\nBegin the adventure: narrate the opening scene (where the hero is, the mood, the hook) and offer choices.`;
         await this.runDm(ctx, transcript, text, save);
         return;
       }
@@ -346,6 +347,18 @@ export class GameEngine {
     }
   }
 
+  /** Once the campaign is over: clear pending input, record the closing text and free the character. */
+  private finalizeEnding(ctx: TurnCtx) {
+    const { state, character } = ctx;
+    if (state.status === 'active') return;
+    state.pending = null;
+    if (!state.ending) {
+      const lastDm = [...state.log].reverse().find((l) => l.kind === 'dm');
+      state.ending = lastDm && lastDm.kind === 'dm' ? lastDm.text : null;
+    }
+    if (character.status === 'alive') character.activeCampaignId = null;
+  }
+
   private async runDmLoop(ctx: TurnCtx, transcript: Transcript, text: string, save: () => void, stats: { calls: number; input: number; output: number; cacheRead: number; cacheWrite: number }): Promise<void> {
     const { state, character, adventure } = ctx;
     const userMsg: Anthropic.Beta.Messages.BetaMessageParam = {
@@ -376,12 +389,23 @@ export class GameEngine {
         );
       } catch (err) {
         console.error('[dm] model call failed', err instanceof Anthropic.APIError ? `${err.status} ${err.message}` : err);
-        addLog(state, { kind: 'system', text: sx(state.locale, committed ? 'dmError' : 'dmErrorRetry'), tone: 'bad' });
         if (!committed) {
-          // Keep the exact outgoing message so Retry can resend it.
-          state.unsent = { text };
-          throw new GameError('dm_unavailable', 'The Dungeon Master is unavailable. Try again.');
+          if (isTransientModelError(err)) {
+            // Keep the exact outgoing message so Retry can resend it.
+            addLog(state, { kind: 'system', text: sx(state.locale, 'dmErrorRetry'), tone: 'bad' });
+            state.unsent = { text };
+            throw new GameError('dm_unavailable', 'The Dungeon Master is unavailable. Try again.');
+          }
+          // The request itself is rejected: resending would fail forever, so do not trap the player.
+          state.unsent = null;
+          if (transcript.length === 0) state.turn = 0; // failed opening: the next load begins afresh
+          else addLog(state, { kind: 'system', text: sx(state.locale, 'dmErrorRejected'), tone: 'bad' });
+          this.finalizeEnding(ctx);
+          throw new GameError('dm_rejected', 'The Dungeon Master could not process that action.');
         }
+        // Part of the turn is already committed: there is nothing to resend, the player just goes on.
+        addLog(state, { kind: 'system', text: sx(state.locale, state.status === 'active' ? 'dmError' : 'dmErrorEnded'), tone: 'bad' });
+        this.finalizeEnding(ctx);
         return;
       }
       stats.calls += 1;
@@ -470,14 +494,7 @@ export class GameEngine {
       if (paused || ended || state.status !== 'active') {
         state.heldResults = results;
         state.waitingTool = paused;
-        if (state.status !== 'active') {
-          state.pending = null;
-          if (!state.ending) {
-            const lastDm = [...state.log].reverse().find((l) => l.kind === 'dm');
-            state.ending = lastDm && lastDm.kind === 'dm' ? lastDm.text : null;
-          }
-          if (character.status === 'alive') character.activeCampaignId = null;
-        }
+        this.finalizeEnding(ctx);
         return;
       }
       if (truncated) {

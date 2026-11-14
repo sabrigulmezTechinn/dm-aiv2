@@ -304,7 +304,7 @@ export function toView(state: CampaignState, character: Character, adventure: Ad
     facts: state.facts,
     busy,
     needsContinue: (state.heldResults.length > 0 && !state.waitingTool && state.status === 'active') || !!state.unsent,
-    needsRetry: !!state.unsent && state.status === 'active',
+    needsRetry: !!state.unsent,
     ending: state.ending,
     createdAt: state.createdAt,
     updatedAt: state.updatedAt,

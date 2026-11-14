@@ -49,7 +49,17 @@ export function ActionPanel({
         <Txt variant="h2" style={{ color: view.status === 'victory' ? colors.gold : colors.red, textAlign: 'center' }}>
           {view.status === 'victory' ? t('victoryTitle') : t('defeatTitle')}
         </Txt>
+        {view.needsRetry ? <Button title={t('retryButton')} icon="refresh" kind="secondary" loading={busy} onPress={() => act({ type: 'continue' })} testID="continue" /> : null}
         <Button title={t('backHome')} icon="home-outline" onPress={onHome} testID="back-home" />
+      </View>
+    );
+  }
+
+  // A failed DM message is waiting: only Retry works, so the roll, combat and choice controls stay hidden.
+  if (view.needsRetry && (pending || view.combat)) {
+    return (
+      <View style={panel}>
+        <Button title={t('retryButton')} icon="refresh" kind="secondary" loading={busy} onPress={() => act({ type: 'continue' })} testID="continue" />
       </View>
     );
   }
@@ -220,7 +230,7 @@ export function ActionPanel({
                 key={ch.id}
                 kind="secondary"
                 title={`${ch.label}${ch.skill ? ` · ${isSkill(ch.skill) ? SKILLS[ch.skill].name[locale] : ABILITY_NAMES[ch.skill as keyof typeof ABILITY_NAMES]?.[locale] ?? ch.skill}` : ''}`}
-                disabled={busy}
+                disabled={busy || view.needsRetry}
                 onPress={() => act({ type: 'choose', choiceId: ch.id })}
                 testID={`choice-${ch.id}`}
                 style={{ justifyContent: 'flex-start' }}
@@ -228,7 +238,7 @@ export function ActionPanel({
             ))}
           </View>
         ) : null}
-        {menu === 'rest' ? (
+        {menu === 'rest' && !view.needsRetry ? (
           <Row>
             <Button title={t('shortRest')} small kind="secondary" style={{ flex: 1 }} testID="rest-short" onPress={() => (setMenu(null), act({ type: 'rest', kind: 'short' }))} />
             <Button title={t('longRest')} small kind="secondary" style={{ flex: 1 }} testID="rest-long" onPress={() => (setMenu(null), act({ type: 'rest', kind: 'long' }))} />
@@ -236,7 +246,7 @@ export function ActionPanel({
           </Row>
         ) : null}
         <Row gap={2}>
-          <IconButton icon="campfire" label={t('rest')} active={menu === 'rest'} testID="rest-menu" onPress={() => !busy && setMenu(menu === 'rest' ? null : 'rest')} />
+          <IconButton icon="campfire" label={t('rest')} active={menu === 'rest'} testID="rest-menu" onPress={() => !busy && !view.needsRetry && setMenu(menu === 'rest' ? null : 'rest')} />
           <TextInput
             testID="action-input"
             value={text}

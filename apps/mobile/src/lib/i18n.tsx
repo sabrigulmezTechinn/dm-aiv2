@@ -182,6 +182,8 @@ const tr = {
   err_network: 'Sunucuya ulaşılamadı. Bağlantını kontrol edip tekrar dene.',
   err_dm_retry: 'Zindan Efendisi şu an yanıt veremiyor. Mesajını yeniden göndermek için Tekrar dene\'ye dokun.',
   err_retry_pending: 'Önce Tekrar dene\'ye dokunmalısın.',
+  err_dm_rejected: 'Zindan Efendisi bu hamleyi işleyemedi. Farklı bir şey dene.',
+  deleteFailed: 'Karakter silinemedi. Tekrar dene.',
   retryButton: 'Tekrar dene',
 };
 
@@ -363,6 +365,8 @@ const en: Record<I18nKey, string> = {
   err_network: 'Could not reach the server. Check your connection and retry.',
   err_dm_retry: "The Dungeon Master can't answer right now. Tap Retry to resend your message.",
   err_retry_pending: 'Tap Retry first.',
+  err_dm_rejected: 'The Dungeon Master could not process that action. Try something different.',
+  deleteFailed: 'The character could not be deleted. Try again.',
   retryButton: 'Retry',
 };
 

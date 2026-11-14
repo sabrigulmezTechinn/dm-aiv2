@@ -72,7 +72,8 @@ export function usePlay(id: string) {
           }
         });
       } catch (e) {
-        fail((e as { code?: string }).code);
+        // A deliberate abort is not an error.
+        if ((e as { name?: string }).name !== 'AbortError') fail((e as { code?: string }).code);
       } finally {
         busyRef.current = false;
         setBusy(false);

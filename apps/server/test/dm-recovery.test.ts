@@ -1,3 +1,4 @@
+import Anthropic from '@anthropic-ai/sdk';
 import { describe, expect, it, vi } from 'vitest';
 import type { CampaignView, TurnEvent } from '@dmai/shared';
 import { seededRng } from '@dmai/rules';
@@ -13,10 +14,11 @@ const choices = (narration: string) => [tu('present_choices', { narration, choic
 class ScriptedModel implements ModelClient {
   readonly name = 'scripted';
   calls: ModelRequest[] = [];
-  constructor(private script: (ContentBlock[] | 'throw')[]) {}
+  constructor(private script: (ContentBlock[] | 'throw' | Error)[]) {}
   async create(req: ModelRequest, cb: NarrationCallbacks): Promise<ModelResponse> {
     this.calls.push({ ...req, messages: [...req.messages] });
     const step = this.script.shift();
+    if (step instanceof Error) throw step;
     if (!step || step === 'throw') throw new Error('network down');
     step.forEach((b, i) => {
       if (b.type === 'tool_use') {
@@ -103,5 +105,98 @@ describe('DM failure recovery', () => {
     } finally {
       spy.mockRestore();
     }
+  });
+
+  it('the opening message says turn 1, also when it is retried', async () => {
+    const model = new ScriptedModel(['throw', choices('Han sessiz.')]);
+    const { act } = setup(model);
+    await act({ type: 'begin' });
+    await act({ type: 'continue' });
+    for (const call of model.calls) {
+      expect(firstText(call)).toContain('Turn 1.');
+      expect(firstText(call)).not.toContain('Turn 0');
+    }
+  });
+
+  it('a failure after the first call tells the player to act, and the UI agrees', async () => {
+    const model = new ScriptedModel([choices('Başlangıç.'), [tu('award_xp', { amount: 5, reason: 'x' })], 'throw', choices('Devam.')]);
+    const { act, store, id } = setup(model);
+    await act({ type: 'begin' });
+    let { view } = await act({ type: 'say', text: 'bakıyorum' });
+    expect(model.calls).toHaveLength(3);
+    expect(view.needsContinue).toBe(false);
+    expect(view.needsRetry).toBe(false);
+    const last = view.log.filter((l) => l.kind === 'system').at(-1)!;
+    expect(last.kind === 'system' && last.text).toContain('hamleni gönder');
+    expect(last.kind === 'system' && last.text).not.toMatch(/Devam'a dokun|Continue/);
+    ({ view } = await act({ type: 'say', text: 'devam ediyorum' }));
+    expect(model.calls).toHaveLength(4);
+    expect(view.log.some((l) => l.kind === 'dm' && l.text === 'Devam.')).toBe(true);
+    expect(store.getCampaign(id)).toBeTruthy();
+  });
+
+  it('a failed closing narration on an ended campaign can be retried', async () => {
+    const model = new ScriptedModel(['throw', choices('Son.')]);
+    const { act, store, id } = setup(model);
+    // Simulate: the hero died and the narration call failed.
+    const row = store.getCampaign(id)!;
+    row.state.status = 'defeat';
+    row.state.unsent = { text: 'The hero has fallen. Narrate the end.' };
+    store.saveCampaign(row.state, row.transcript);
+    let { view, ev } = await act({ type: 'say', text: 'hello' });
+    expect(ev.some((e) => e.type === 'error' && e.code === 'campaign_over')).toBe(true);
+    expect(view.needsRetry).toBe(true);
+    expect(view.needsContinue).toBe(true);
+    expect(model.calls).toHaveLength(0);
+
+    ({ view, ev } = await act({ type: 'continue' })); // still failing
+    expect(ev.some((e) => e.type === 'error' && e.code === 'dm_unavailable')).toBe(true);
+    expect(view.needsRetry).toBe(true);
+    ({ view, ev } = await act({ type: 'continue' }));
+    expect(ev.some((e) => e.type === 'error')).toBe(false);
+    expect(model.calls).toHaveLength(2);
+    expect(view.needsRetry).toBe(false);
+    expect(view.needsContinue).toBe(false);
+    expect(view.status).toBe('defeat');
+    expect(view.log.some((l) => l.kind === 'dm' && l.text === 'Son.')).toBe(true);
+    checkProtocol(store.getCampaign(id)!.transcript);
+  });
+
+  it('transient errors keep the retry flow, non-transient ones free the player', async () => {
+    const hdr = new Headers();
+    const api = (status: number, type: string) => new Anthropic.APIError(status, { type: 'error', error: { type, message: 'm' } }, 'm', hdr);
+    for (const err of [api(429, 'rate_limit_error'), api(500, 'api_error'), api(529, 'overloaded_error'), new Anthropic.APIConnectionError({ message: 'down' })]) {
+      const { act } = setup(new ScriptedModel([choices('Başlangıç.'), err]));
+      await act({ type: 'begin' });
+      const { view, ev } = await act({ type: 'say', text: 'merhaba' });
+      expect(ev.some((e) => e.type === 'error' && e.code === 'dm_unavailable')).toBe(true);
+      expect(view.needsRetry).toBe(true);
+    }
+
+    const model = new ScriptedModel([choices('Başlangıç.'), api(400, 'invalid_request_error'), choices('Tamam.')]);
+    const { act, store, id } = setup(model);
+    await act({ type: 'begin' });
+    let { view, ev } = await act({ type: 'say', text: 'bozuk' });
+    expect(ev.some((e) => e.type === 'error' && e.code === 'dm_rejected')).toBe(true);
+    expect(view.needsRetry).toBe(false);
+    expect(store.getCampaign(id)!.state.unsent).toBeNull();
+    ({ view, ev } = await act({ type: 'say', text: 'başka' }));
+    expect(ev.some((e) => e.type === 'error')).toBe(false);
+    expect(view.log.some((l) => l.kind === 'dm' && l.text === 'Tamam.')).toBe(true);
+    checkProtocol(store.getCampaign(id)!.transcript);
+  });
+
+  it('a rejected opening can be begun again', async () => {
+    const err = new Anthropic.APIError(400, { type: 'error', error: { type: 'invalid_request_error', message: 'm' } }, 'm', new Headers());
+    const model = new ScriptedModel([err, choices('Han sessiz.')]);
+    const { act } = setup(model);
+    let { view, ev } = await act({ type: 'begin' });
+    expect(ev.some((e) => e.type === 'error' && e.code === 'dm_rejected')).toBe(true);
+    expect(view.turn).toBe(0);
+    expect(view.needsRetry).toBe(false);
+    ({ view, ev } = await act({ type: 'begin' }));
+    expect(ev.some((e) => e.type === 'error')).toBe(false);
+    expect(view.turn).toBe(1);
+    expect(firstText(model.calls[1]!)).toContain('Turn 1.');
   });
 });
