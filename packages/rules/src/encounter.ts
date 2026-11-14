@@ -45,7 +45,8 @@ export function monsterMultiplier(count: number): number {
   if (count === 2) return 1.5;
   if (count <= 6) return 2;
   if (count <= 10) return 2.5;
-  return 3;
+  if (count <= 14) return 3;
+  return 4;
 }
 
 /** XP value of one monster (its own xp field, else by CR, else 0). */

@@ -66,6 +66,16 @@ export const MONSTERS: Record<string, MonsterDef> = Object.fromEntries(
       traits: ['nimble_escape'], morale: 0.2, behavior: 'melee', color: '#556b2f',
     },
     {
+      id: 'skrag', name: { en: 'Skrag', tr: 'Skrag' },
+      description: { en: 'A scarred, nervous goblin boss with one torn ear; a schemer rather than a brawler.', tr: 'Tek kulağı yırtık, yara izli ve gergin bir goblin şefi; dövüşçüden çok entrikacı.' },
+      ac: 15, hp: '4d6', speed: 30, abilities: ab(10, 14, 10, 10, 8, 10), cr: '1/4', xp: 50,
+      attacks: [
+        { id: 'scimitar', name: { en: 'Scimitar', tr: 'Pala' }, toHit: 4, damage: '1d6+2', damageType: 'slashing', reach: 5 },
+        { id: 'javelin', name: { en: 'Javelin', tr: 'Cirit' }, toHit: 2, damage: '1d6', damageType: 'piercing', range: [30, 120] },
+      ],
+      traits: ['nimble_escape'], morale: 0.2, behavior: 'melee', color: '#556b2f',
+    },
+    {
       id: 'kobold', name: { en: 'Kobold', tr: 'Kobold' },
       description: { en: 'A small reptilian that fights in packs.', tr: 'Sürüyle dövüşen küçük bir sürüngen.' },
       ac: 12, hp: '2d6-2', speed: 30, abilities: ab(7, 15, 9, 8, 7, 8), cr: '1/8', xp: 25,

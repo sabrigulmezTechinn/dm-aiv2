@@ -12,6 +12,11 @@ describe('encounter budget', () => {
     expect(monsterMultiplier(1)).toBe(1);
     expect(monsterMultiplier(2)).toBe(1.5);
     expect(monsterMultiplier(4)).toBe(2);
+    expect(monsterMultiplier(7)).toBe(2.5);
+    expect(monsterMultiplier(11)).toBe(3);
+    expect(monsterMultiplier(14)).toBe(3);
+    expect(monsterMultiplier(15)).toBe(4);
+    expect(monsterMultiplier(20)).toBe(4);
     expect(adjustedXp([{ monsterId: 'goblin', count: 2 }])).toBe(monsterXp('goblin') * 2 * 1.5);
   });
   it('leaves a fair fight alone', () => {
