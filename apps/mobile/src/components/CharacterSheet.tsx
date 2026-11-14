@@ -29,7 +29,7 @@ import {
 } from '@dmai/rules';
 import { useI18n } from '../lib/i18n';
 import { colors, radius, space } from '../lib/theme';
-import { Bar, Button, Card, Row, Section, Stat, Txt } from './ui';
+import { Bar, Button, Card, Row, Section, Stat, Txt, hpColor } from './ui';
 
 const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 
@@ -64,7 +64,7 @@ export function CharacterSheet({
           <Txt variant="muted" style={{ width: 70 }}>
             {t('hp')} {c.hp}/{c.maxHp}
           </Txt>
-          <Bar value={c.hp} max={c.maxHp} style={{ flex: 1 }} height={8} />
+          <Bar value={c.hp} max={c.maxHp} style={{ flex: 1 }} height={8} color={hpColor(c.hp, c.maxHp)} />
         </Row>
         {next ? (
           <Row>

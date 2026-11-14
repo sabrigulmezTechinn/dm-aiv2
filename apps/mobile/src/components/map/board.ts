@@ -267,7 +267,7 @@ export class Board {
   private camera = new THREE.PerspectiveCamera(38, 1, 0.1, 200);
   private hemi = new THREE.HemisphereLight(0xfff1dd, 0x2a2018, 0.8);
   private sun = new THREE.DirectionalLight(0xffe6c4, 1.0);
-  private playerLight = new THREE.PointLight(0xffb060, 0, 9, 1.6);
+  private playerLight = new THREE.PointLight(0xffb060, 0, 14, 1.4);
   private mapGroup = new THREE.Group();
   private propsGroup = new THREE.Group();
   private wallsGroup = new THREE.Group();
@@ -512,8 +512,8 @@ export class Board {
       this.props.push({ x: p.x, y: p.y, model, lightObj });
     }
     const ambient = map.ambient;
-    this.hemi.intensity = 0.35 + ambient * 0.75;
-    this.sun.intensity = outdoor ? 1.6 : 0.25 + ambient * 0.8;
+    this.hemi.intensity = 0.65 + ambient * 0.9;
+    this.sun.intensity = outdoor ? 1.6 : 0.5 + ambient * 0.8;
     this.renderer.toneMappingExposure = outdoor ? 1.0 : 1.1;
     for (const t of this.tokens.values()) this.tokenGroup.remove(t.group);
     this.tokens.clear();
@@ -522,7 +522,7 @@ export class Board {
 
   private fogAt(x: number, y: number): number {
     const f = this.data?.fog?.[y]?.[x];
-    return f === '2' ? 1 : f === '1' ? 0.3 : f === undefined ? 1 : 0;
+    return f === '2' ? 1 : f === '1' ? 0.55 : f === undefined ? 1 : 0;
   }
 
   private applyFog() {
@@ -704,7 +704,7 @@ export class Board {
     const pobj = player ? this.tokens.get(player.id) : undefined;
     if (pobj && dark) {
       this.playerLight.position.copy(pobj.group.position).add(new THREE.Vector3(0, 1.4, 0));
-      this.playerLight.intensity = (2.2 + Math.sin(time * 11) * 0.15) * (t > 0.5 ? 0.7 : 1);
+      this.playerLight.intensity = (4.2 + Math.sin(time * 11) * 0.2) * (t > 0.5 ? 0.75 : 1);
     } else this.playerLight.intensity = 0;
     if (this.highlightMesh) (this.highlightMesh.material as THREE.MeshBasicMaterial).opacity = 0.25 + Math.sin(time * 3) * 0.08;
     this.renderer.render(this.scene, this.camera);
