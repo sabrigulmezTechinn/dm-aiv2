@@ -124,20 +124,25 @@ export class Api {
       }
       return rest;
     };
-    if (res.body && typeof res.body.getReader === 'function') {
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buf = '';
-      for (;;) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buf += decoder.decode(value, { stream: true });
-        buf = emitLines(buf, false);
+    try {
+      if (res.body && typeof res.body.getReader === 'function') {
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = '';
+        for (;;) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          buf = emitLines(buf, false);
+        }
+        buf += decoder.decode();
+        emitLines(buf, true);
+      } else {
+        emitLines(await res.text(), true);
       }
-      buf += decoder.decode();
-      emitLines(buf, true);
-    } else {
-      emitLines(await res.text(), true);
+    } catch (e) {
+      // The connection dropped mid-stream.
+      throw new ApiError(0, 'network', (e as Error).message);
     }
   }
 }

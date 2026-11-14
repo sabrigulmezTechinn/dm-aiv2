@@ -167,6 +167,10 @@ const tr = {
   err_in_combat: 'Savaş sırasında yapılamaz.',
   err_full_hp: 'Canın zaten dolu.',
   err_generic: 'Bir şeyler ters gitti.',
+  err_network: 'Sunucuya ulaşılamadı. Bağlantını kontrol edip tekrar dene.',
+  err_dm_retry: 'Zindan Efendisi şu an yanıt veremiyor. Mesajını yeniden göndermek için Tekrar dene\'ye dokun.',
+  err_retry_pending: 'Önce Tekrar dene\'ye dokunmalısın.',
+  retryButton: 'Tekrar dene',
 };
 
 export type I18nKey = keyof typeof tr;
@@ -333,6 +337,10 @@ const en: Record<I18nKey, string> = {
   err_in_combat: "Can't do that during combat.",
   err_full_hp: 'You are already at full health.',
   err_generic: 'Something went wrong.',
+  err_network: 'Could not reach the server. Check your connection and retry.',
+  err_dm_retry: "The Dungeon Master can't answer right now. Tap Retry to resend your message.",
+  err_retry_pending: 'Tap Retry first.',
+  retryButton: 'Retry',
 };
 
 const DICTS: Record<Locale, Record<I18nKey, string>> = { tr, en };

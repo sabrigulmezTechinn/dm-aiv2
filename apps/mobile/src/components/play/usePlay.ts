@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CampaignView, PlayerAction, RollResult } from '@dmai/shared';
 import { useApp } from '../../lib/app-state';
-import { errorText } from '../../lib/i18n';
+import { errorText as baseErrorText } from '../../lib/i18n';
+
+// The server keeps the unsent DM message; the UI offers Retry instead of Continue.
+const errorText = (locale: Parameters<typeof baseErrorText>[0], code: string | undefined) => baseErrorText(locale, code === 'dm_unavailable' ? 'dm_retry' : code);
 
 export interface LiveEntry {
   id: string;
@@ -13,7 +16,19 @@ export function usePlay(id: string) {
   const [view, setView] = useState<CampaignView | null>(null);
   const [live, setLive] = useState<LiveEntry[]>([]);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setErrorText] = useState<string | null>(null);
+  const [networkError, setNetworkError] = useState(false);
+  const setError = useCallback((m: string | null) => {
+    setErrorText(m);
+    if (m === null) setNetworkError(false);
+  }, []);
+  const fail = useCallback(
+    (code: string | undefined) => {
+      setErrorText(errorText(locale, code));
+      setNetworkError(code === 'network');
+    },
+    [locale],
+  );
   const [rolls, setRolls] = useState<RollResult[]>([]);
   const busyRef = useRef(false);
 
@@ -21,9 +36,9 @@ export function usePlay(id: string) {
     try {
       setView(await api.campaign(id));
     } catch (e) {
-      setError(errorText(locale, (e as { code?: string }).code));
+      fail((e as { code?: string }).code);
     }
-  }, [api, id, locale]);
+  }, [api, id, fail]);
 
   useEffect(() => {
     void load();
@@ -52,22 +67,22 @@ export function usePlay(id: string) {
               setLive((s) => s.filter((x) => !e.view.log.some((l) => l.id === x.id)));
               break;
             case 'error':
-              setError(errorText(locale, e.code));
+              fail(e.code);
               break;
           }
         });
       } catch (e) {
-        setError(errorText(locale, (e as { code?: string }).code));
+        fail((e as { code?: string }).code);
       } finally {
         busyRef.current = false;
         setBusy(false);
         setLive([]);
       }
     },
-    [api, id, locale],
+    [api, id, fail],
   );
 
   const shiftRoll = useCallback(() => setRolls((r) => r.slice(1)), []);
 
-  return { view, live, busy, error, setError, act, rolls, shiftRoll, reload: load };
+  return { view, live, busy, error, setError, act, rolls, shiftRoll, reload: load, networkError };
 }

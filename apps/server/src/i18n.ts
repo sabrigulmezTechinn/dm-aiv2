@@ -23,6 +23,7 @@ const S = {
   victory: { en: 'Adventure complete!', tr: 'Macera tamamlandı!' },
   defeat: { en: 'Your story ends here.', tr: 'Hikâyen burada sona eriyor.' },
   dmError: { en: 'The Dungeon Master lost the thread for a moment. Tap Continue to try again.', tr: 'Zindan Efendisi bir anlığına ipin ucunu kaçırdı. Tekrar denemek için Devam\'a dokun.' },
+  dmErrorRetry: { en: 'The Dungeon Master lost the thread for a moment. Tap Retry to resend your message.', tr: 'Zindan Efendisi bir anlığına ipin ucunu kaçırdı. Mesajını yeniden göndermek için Tekrar dene\'ye dokun.' },
   dmRefusal: { en: 'The Dungeon Master pauses and steers the story elsewhere.', tr: 'Zindan Efendisi duraksıyor ve hikâyeyi başka bir yöne çeviriyor.' },
   condition: { en: '{c}: {state}.', tr: '{c}: {state}.' },
   equipped: { en: 'Equipped: {item}.', tr: 'Kuşandın: {item}.' },
