@@ -175,16 +175,29 @@ Bu testte kullanılan denge simülatörü projeye kalıcı bir komut olarak ekle
 
 ## Sıralama ve durum
 
-- [ ] Faz 1: Gönder düğmesi taşması
-- [ ] Faz 1: DM hatalarında kurtarma
-- [ ] Karar A ve B
-- [ ] Faz 2: Maceraları yeniden dengeleme
-- [ ] Faz 2: Karşılaşma bütçesi
-- [ ] Faz 2: Kolay modda hayatta kalma
-- [ ] Faz 2: Kilometre taşı XP'si
-- [ ] Faz 2: Simülatör hedeflerinin tutması
-- [ ] Faz 3: Karanlık haritalar
-- [ ] Faz 3: Türkçe kalıntılar
-- [ ] Faz 3: Yenilgi satırı, karakter silme, bağlantı mesajı, HP çubuğu rengi
-- [ ] Faz 3: Test senaryoları ve CI
-- [ ] Gerçek Claude ve iPhone testi
+- [x] Faz 1: Gönder düğmesi taşması
+- [x] Faz 1: DM hatalarında kurtarma
+- [x] Karar A ve B (A: kolay modda ölüm yok, bayılma/esir; B: ikisi birlikte)
+- [x] Faz 2: Maceraları yeniden dengeleme
+- [x] Faz 2: Karşılaşma bütçesi
+- [x] Faz 2: Kolay modda hayatta kalma
+- [x] Faz 2: Kilometre taşı XP'si
+- [ ] Faz 2: Simülatör hedeflerinin tutması (kısmen, bkz. aşağıda)
+- [x] Faz 3: Karanlık haritalar
+- [x] Faz 3: Türkçe kalıntılar
+- [x] Faz 3: Yenilgi satırı, karakter silme, bağlantı mesajı, HP çubuğu rengi
+- [x] Faz 3: Test senaryoları ve CI
+- [ ] Gerçek Claude ve iPhone testi (kullanıcıda; tur başına süre ve token kaydı sunucuya eklendi)
+
+### Simülatör sonucu (`pnpm sim`, 320 oyun)
+
+| Sınıf | Kolay: kazanma / ilk savaşta ölüm / finalde seviye | Zor: kazanma / ilk savaşta ölüm / finalde seviye |
+|---|---|---|
+| Savaşçı | %100 / %0 / 3 | %78 / %8 / 3 |
+| Haydut | %100 / %0 / 3 | %57 / %0 / 3 |
+| Büyücü | %100 / %0 / 3 | %43 / %5 / 3 |
+| Rahip | %100 / %0 / 3 | %43 / %10 / 3 |
+
+Tutmayan hedef: zor modda Savaşçı ve Haydut kazanma oranı %35–55 aralığının üstünde. Fark sınıflar arası güçten geliyor; karşılaşmaları zorlaştırmak önce büyücüleri etkiliyor. Kapatmak için sınıfa özel bir ürün kararı gerekiyor.
+
+Plandan sapma: kolay moddaki tasarlanmış karşılaşmalar 5e "orta" bütçesine sığacak şekilde biraz hafifletildi (tüneller: tek iskelet, final: yalnız Varek). Zor mod plandaki listeyi kullanıyor.
