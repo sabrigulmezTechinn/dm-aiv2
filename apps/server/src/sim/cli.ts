@@ -1,9 +1,9 @@
 import { writeFileSync } from 'node:fs';
 import type { ClassId } from '@dmai/shared';
-import { ADVENTURE_IDS, CLASS_IDS, DIFFICULTIES, formatReport, runMatrix, toJson, type Difficulty } from './sim';
+import { ADVENTURE_IDS, CLASS_IDS, DIFFICULTIES, formatBreakdown, formatReport, runMatrix, toJson, type Difficulty } from './sim';
 
 const HELP = `Balance simulator (offline mock DM, deterministic).
-Usage: pnpm sim [--games N] [--class fighter,rogue,...] [--adventure willow_inn,lost_caravan] [--difficulty easy,hard] [--json out.json] [--quiet]
+Usage: pnpm sim [--games N] [--class fighter,rogue,...] [--adventure willow_inn,lost_caravan] [--difficulty easy,hard] [--json out.json] [--quiet] [--breakdown]
   --games N   games per class x difficulty, split over the selected adventures (default 40 -> 320 total)`;
 
 const argv = process.argv.slice(2).filter((a) => a !== '--');
@@ -35,6 +35,7 @@ if (!Number.isInteger(games) || games < 1) {
 }
 const filters = { classes: list<ClassId>('class', CLASS_IDS), adventures: list<string>('adventure', ADVENTURE_IDS), difficulties: list<Difficulty>('difficulty', DIFFICULTIES) };
 const jsonPath = opt('json');
+const breakdown = argv.includes('--breakdown');
 const quiet = argv.includes('--quiet');
 
 const t0 = Date.now();
@@ -50,6 +51,7 @@ const results = await runMatrix({
 if (!quiet && process.stderr.isTTY) process.stderr.write('\r');
 const seconds = (Date.now() - t0) / 1000;
 console.log(formatReport(results));
+if (breakdown) console.log(`\n${formatBreakdown(results)}\n`);
 console.log(`wall time: ${seconds.toFixed(1)}s`);
 if (jsonPath) {
   writeFileSync(jsonPath, JSON.stringify(toJson(results, { gamesPerClassDifficulty: games, filters, seconds }), null, 2));

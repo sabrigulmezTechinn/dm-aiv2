@@ -5,9 +5,10 @@
  * Not part of the server runtime: run it with `pnpm sim` (see cli.ts).
  */
 import type { CampaignView, CharacterDraft, ClassId, CombatAction, PlayerAction, TurnEvent } from '@dmai/shared';
-import { CLASSES, seededRng } from '@dmai/rules';
+import { CLASSES, MONSTERS, seededRng } from '@dmai/rules';
 import { Store } from '../db';
 import { GameEngine } from '../game/engine';
+import { getAdventure, sceneEncounter } from '../adventures';
 import { MockModel } from '../dm/mock';
 
 export type Difficulty = 'easy' | 'hard';
@@ -65,6 +66,16 @@ export interface GameResult {
   internalErrors: number;
   /** Script ended (or step cap hit) while the campaign was still active. */
   incomplete: boolean;
+  /** One record per fight, in order (used by --breakdown). */
+  combats: CombatRecord[];
+}
+
+export interface CombatRecord {
+  scene: string;
+  /** The encounter budget removed at least one enemy. */
+  trimmed: boolean;
+  /** The hero ended the fight dead (defeat). */
+  died: boolean;
 }
 
 function draftFor(cls: ClassId): CharacterDraft {
@@ -121,6 +132,8 @@ async function playGameInner(cls: ClassId, adventureId: string, difficulty: Diff
     const combatAct = (action: CombatAction) => act({ type: 'combat', action });
 
     let combatsFought = 0;
+    const combats: CombatRecord[] = [];
+    let turnTried = false;
     let diedInFirstCombat = false;
     let levelAtFinal: number | null = null;
 
@@ -142,7 +155,14 @@ async function playGameInner(cls: ClassId, adventureId: string, difficulty: Diff
         await combatAct({ kind: 'second_wind' });
         if (!view.combat || view.pending?.type === 'death_save') return;
       }
-      if (frac < 0.4 && cls === 'cleric' && slotsLeft(1) > 0 && knows('cure_wounds')) {
+      // Cleric: Healing Word is a bonus action: heal, then (5e) only a cantrip or weapon attack this turn.
+      let bonusSpell = false;
+      if (frac < 0.65 && cls === 'cleric' && slotsLeft(1) > 0 && knows('healing_word') && view.combat?.order[view.combat.turnIndex] === view.playerCombatantId) {
+        await combatAct({ kind: 'cast', spellId: 'healing_word', targetId: me.id });
+        bonusSpell = !lastError;
+        if (!view.combat || view.pending?.type === 'death_save') return;
+      }
+      if (frac < 0.4 && !bonusSpell && cls === 'cleric' && slotsLeft(1) > 0 && knows('cure_wounds')) {
         await combatAct({ kind: 'cast', spellId: 'cure_wounds', targetId: me.id });
         if (!lastError) return finishTurn();
       }
@@ -151,13 +171,20 @@ async function playGameInner(cls: ClassId, adventureId: string, difficulty: Diff
         if (!lastError) return finishTurn();
       }
 
+      // Cleric signature feature: Turn Undead (level 2+) once per fight when an undead foe is near.
+      if (cls === 'cleric' && !turnTried && view.character.level >= 2 && foes.some((f) => MONSTERS[f.refId]?.traits.includes('undead') && cheb(f, me) <= 6)) {
+        turnTried = true;
+        await combatAct({ kind: 'turn_undead' });
+        if (!view.combat || view.pending?.type === 'death_save') return;
+      }
+
       // Spells for casters.
       const spells: string[] = [];
       if (cls === 'wizard') {
         if (slotsLeft(1) > 0 && knows('magic_missile')) spells.push('magic_missile');
         spells.push('fire_bolt');
       } else if (cls === 'cleric') {
-        if (slotsLeft(1) > 0 && knows('guiding_bolt')) spells.push('guiding_bolt');
+        if (!bonusSpell && slotsLeft(1) > (view.character.level >= 2 ? 1 : 0) && knows('guiding_bolt')) spells.push('guiding_bolt'); // keep one slot for healing
         spells.push('sacred_flame');
       }
       for (const spellId of spells) {
@@ -188,6 +215,16 @@ async function playGameInner(cls: ClassId, adventureId: string, difficulty: Diff
 
     const fightUntilOver = async () => {
       combatsFought++;
+      const rec: CombatRecord = {
+        scene: view.scene.id,
+        trimmed: false,
+        died: false,
+      };
+      const wanted = ((getAdventure(adventureId)!.scenes[view.scene.id] ? sceneEncounter(getAdventure(adventureId)!.scenes[view.scene.id]!, difficulty) : undefined) ?? []).reduce((n, e) => n + e.count, 0);
+      const present = Object.values(view.combat!.combatants).filter((x) => x.team === 'enemy').length;
+      rec.trimmed = wanted > 0 && present < wanted;
+      combats.push(rec);
+      turnTried = false;
       let guard = 0;
       while (view.combat && view.status === 'active' && guard++ < 150) {
         if (view.pending?.type === 'death_save') {
@@ -202,6 +239,7 @@ async function playGameInner(cls: ClassId, adventureId: string, difficulty: Diff
         }
         await playerTurn();
       }
+      rec.died = store.getCharacter(ch.id)!.status === 'dead' || view.status === 'defeat';
       if (combatsFought === 1 && (store.getCharacter(ch.id)!.status === 'dead' || view.status === 'defeat')) diedInFirstCombat = true;
     };
 
@@ -227,6 +265,7 @@ async function playGameInner(cls: ClassId, adventureId: string, difficulty: Diff
       finalLevel: view.character.level,
       internalErrors,
       incomplete: view.status === 'active',
+      combats,
     };
   } finally {
     console.error = realConsoleError;
@@ -368,4 +407,29 @@ export function formatReport(results: GameResult[]): string {
 
 export function toJson(results: GameResult[], meta: Record<string, unknown> = {}) {
   return { meta, targets: TARGETS, summary: summarize(results), games: results };
+}
+
+/** Deaths per scene for each class x difficulty (and how often the budget trimmed the fight). */
+export function formatBreakdown(results: GameResult[]): string {
+  const lines: string[] = ['Combat breakdown per class x difficulty (deaths/fights per scene; trimmed = budget removed enemies)'];
+  lines.push(`${pad('class', 9)}${pad('diff', 6)}${pad('adventure', 14)}${pad('scene', 18)}${pad('fights', 8)}${pad('deaths', 8)}trimmed`);
+  for (const cls of CLASS_IDS) {
+    for (const d of DIFFICULTIES) {
+      for (const adv of ADVENTURE_IDS) {
+        const rs = results.filter((r) => r.class === cls && r.difficulty === d && r.adventure === adv);
+        const scenes = new Map<string, { fights: number; deaths: number; trimmed: number }>();
+        for (const r of rs) {
+          for (const c of r.combats) {
+            const e = scenes.get(c.scene) ?? { fights: 0, deaths: 0, trimmed: 0 };
+            e.fights++;
+            if (c.died) e.deaths++;
+            if (c.trimmed) e.trimmed++;
+            scenes.set(c.scene, e);
+          }
+        }
+        for (const [scene, e] of scenes) lines.push(`${pad(cls, 9)}${pad(d, 6)}${pad(adv, 14)}${pad(scene, 18)}${pad(String(e.fights), 8)}${pad(String(e.deaths), 8)}${e.trimmed}`);
+      }
+    }
+  }
+  return lines.join('\n');
 }
