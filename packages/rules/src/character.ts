@@ -1,4 +1,4 @@
-import type { Ability, AbilityScores, Character, CharacterDraft, ClassId, InventoryItem, Skill } from '@dmai/shared';
+import type { Ability, AbilityScores, Character, CharacterDraft, ClassId, Difficulty, InventoryItem, Skill } from '@dmai/shared';
 import { ABILITIES, clamp, uid } from '@dmai/shared';
 import { CLASSES, FULL_CASTER_SLOTS, MAX_LEVEL, XP_THRESHOLDS, proficiencyBonus } from './data/classes';
 import { RACES } from './data/races';
@@ -109,6 +109,23 @@ export function createCharacter(userId: string, draft: CharacterDraft): Characte
   };
   refreshClassResources(c);
   return c;
+}
+
+/** Number of healing potions granted at campaign start on easy. */
+export const EASY_START_POTIONS = 2;
+
+/** Applies difficulty-specific campaign start bonuses (easy: 2 healing potions). Mutates and returns the character. */
+export function applyDifficultyStart(c: Character, difficulty: Difficulty = 'hard'): Character {
+  if (difficulty === 'easy') {
+    addItem(c, 'healing_potion', EASY_START_POTIONS);
+    c.updatedAt = Date.now();
+  }
+  return c;
+}
+
+/** Death save failures added by a natural 1: 2 in 5e, 1 on easy. */
+export function natOneDeathSaveFailures(difficulty: Difficulty = 'hard'): number {
+  return difficulty === 'easy' ? 1 : 2;
 }
 
 /** Recomputes slots and known spells for the current level. Keeps used slots where possible. */
@@ -414,7 +431,8 @@ export interface RestResult {
   slotsRecovered: number;
 }
 
-export function shortRest(c: Character, rng?: Rng): RestResult {
+/** Easy mode: spend every available hit die (no 75% early stop). Default keeps current behaviour. */
+export function shortRest(c: Character, rng?: Rng, difficulty: Difficulty = 'hard'): RestResult {
   const res: RestResult = { hpGained: 0, hitDiceSpent: 0, slotsRecovered: 0 };
   if (c.status === 'dead') return res;
   const die = CLASSES[c.class].hitDie;
@@ -425,7 +443,7 @@ export function shortRest(c: Character, rng?: Rng): RestResult {
     res.hpGained += healCharacter(c, gain);
     c.hitDice -= 1;
     res.hitDiceSpent += 1;
-    if (c.hp >= c.maxHp * 0.75) break;
+    if (difficulty !== 'easy' && c.hp >= c.maxHp * 0.75) break;
   }
   for (const id of ['second_wind', 'action_surge', 'turn_undead']) delete c.featureUses[`used_${id}`];
   if (featureUsesLeft(c, 'arcane_recovery') > 0) {

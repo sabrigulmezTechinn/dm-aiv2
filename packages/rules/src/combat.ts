@@ -20,6 +20,7 @@ import {
   damageCharacter,
   featureUsesLeft,
   hasFeature,
+  natOneDeathSaveFailures,
   healCharacter,
   initiativeMod,
   itemName,
@@ -936,7 +937,7 @@ export function rollDeathSave(state: CombatState | null, ctx: CombatCtx): Combat
     healCharacter(c, 1);
     res.events.push(tx(ctx.locale, 'revive', { a: c.name }));
   } else if (nat === 1) {
-    c.deathSaves.failures += 2;
+    c.deathSaves.failures += natOneDeathSaveFailures(ctx.difficulty);
   } else if (r.total >= 10) {
     c.deathSaves.successes += 1;
     res.events.push(tx(ctx.locale, 'deathSaveOk', { s: c.deathSaves.successes, n: needed }));
