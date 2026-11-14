@@ -183,7 +183,7 @@ export default function NewCharacter() {
                 {Object.entries(RACES[r].bonuses)
                   .map(([a, v]) => `${ABILITY_SHORT[a as Ability][locale]} +${v}`)
                   .join(', ')}{' '}
-                · {t('speed')} {RACES[r].speed} ft
+                · {t('speed')} {RACES[r].speed} {t('unitFt')}
               </Txt>
               <Txt variant="small">{RACES[r].traitText[locale]}</Txt>
             </Card>

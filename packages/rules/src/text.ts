@@ -47,6 +47,7 @@ const T = {
 } as const;
 
 export type TextKey = keyof typeof T;
+export const TEXT_KEYS = Object.keys(T) as TextKey[];
 
 export function tx(locale: Locale, k: TextKey, params: Record<string, string | number> = {}): string {
   let s: string = T[k][locale] ?? T[k].en;
