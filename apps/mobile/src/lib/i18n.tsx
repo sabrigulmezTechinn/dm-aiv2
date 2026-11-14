@@ -67,8 +67,8 @@ const tr = {
   difficulty: 'Zorluk',
   easy: 'Kolay',
   hard: 'Zor',
-  easyDesc: 'Affedici DM, düşük DC\'ler, DC\'ler görünür, daha zayıf düşmanlar.',
-  hardDesc: 'Tam 5e: gizli DC\'ler, tam güçte düşmanlar, gerçek tehlike.',
+  easyDesc: 'Affedici DM, düşük zorluk eşikleri, eşikler görünür, daha zayıf düşmanlar.',
+  hardDesc: 'Tam 5e: gizli zorluk eşikleri, tam güçte düşmanlar, gerçek tehlike.',
   language: 'Anlatım dili',
   hours: '~{n} saat',
   recommendedLevel: 'Önerilen seviye {n}',
@@ -104,7 +104,7 @@ const tr = {
   actionSurge: 'Aksiyon Atağı',
   turnUndead: 'Ölümsüz Kov',
   chooseTarget: 'Bir hedef seç (haritada veya listeden)',
-  movement: 'Hareket {n} ft',
+  movement: 'Hareket {n} fit',
   action: 'Aksiyon',
   bonus: 'Bonus',
   used: 'kullanıldı',
@@ -133,7 +133,7 @@ const tr = {
   spellLevel: '{n}. seviye',
   proficient: 'yeterli',
   conditions: 'Durumlar',
-  dc: 'DC {n}',
+  dc: 'Zorluk {n}',
   success: 'Başarılı',
   failure: 'Başarısız',
   crit: 'KRİTİK',
@@ -148,6 +148,16 @@ const tr = {
   serverUrl: 'Sunucu adresi',
   dmMode: 'DM modu',
   attribution: 'Bu oyun, Wizards of the Coast LLC\'nin System Reference Document 5.1 içeriğini kullanır (CC-BY-4.0).',
+  // character sheet / units (distance unit: feet kept as "fit", no metric conversion)
+  initiativeShort: 'İnisiyatif',
+  profBonus: 'Yeterlilik',
+  unitFt: 'fit',
+  melee: 'yakın dövüş',
+  armorAc: '{n} ZS',
+  passivePerception: 'pasif algı',
+  spellDc: 'Büyü zorluğu {n}',
+  dmModeMock: 'Deneme (çevrimdışı)',
+  dmModeClaude: 'Claude',
   // errors
   err_roll_pending: 'Önce zarı atman gerekiyor.',
   err_death_save_pending: 'Önce ölüm kurtarmanı at.',
@@ -315,6 +325,15 @@ const en: Record<I18nKey, string> = {
   serverUrl: 'Server address',
   dmMode: 'DM mode',
   attribution: 'This game uses material from the System Reference Document 5.1 by Wizards of the Coast LLC (CC-BY-4.0).',
+  initiativeShort: 'Init',
+  profBonus: 'Prof',
+  unitFt: 'ft',
+  melee: 'melee',
+  armorAc: '{n} AC',
+  passivePerception: 'passive perception',
+  spellDc: 'Spell DC {n}',
+  dmModeMock: 'Mock (offline)',
+  dmModeClaude: 'Claude',
   err_roll_pending: 'You need to roll first.',
   err_death_save_pending: 'Roll your death save first.',
   err_not_your_turn: "It's not your turn.",
@@ -335,7 +354,7 @@ const en: Record<I18nKey, string> = {
   err_generic: 'Something went wrong.',
 };
 
-const DICTS: Record<Locale, Record<I18nKey, string>> = { tr, en };
+export const DICTS: Record<Locale, Record<I18nKey, string>> = { tr, en };
 
 export function translate(locale: Locale, key: I18nKey, params?: Record<string, string | number>): string {
   let s = DICTS[locale][key] ?? DICTS.en[key] ?? key;

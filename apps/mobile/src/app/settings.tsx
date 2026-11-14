@@ -25,7 +25,7 @@ export default function Settings() {
         <Txt variant="label">{t('serverUrl')}</Txt>
         <Txt variant="small">{api.baseUrl}</Txt>
         <Txt variant="label">{t('dmMode')}</Txt>
-        <Txt variant="small">{dmMode === 'mock' ? 'Mock (offline)' : 'Claude'}</Txt>
+        <Txt variant="small">{dmMode === 'mock' ? t('dmModeMock') : t('dmModeClaude')}</Txt>
       </Card>
       <Txt variant="muted">{t('attribution')}</Txt>
     </Screen>

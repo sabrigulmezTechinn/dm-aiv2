@@ -76,8 +76,8 @@ export function CharacterSheet({
         ) : null}
         <Row>
           <Stat label={t('ac')} value={armorClass(c)} />
-          <Stat label={t('speed')} value={`${speed(c)}`} sub="ft" />
-          <Stat label="Init" value={signed(initiativeMod(c))} />
+          <Stat label={t('speed')} value={`${speed(c)}`} sub={t('unitFt')} />
+          <Stat label={t('initiativeShort')} value={signed(initiativeMod(c))} />
           <Stat label={t('gold')} value={c.gold} />
         </Row>
         {c.conditions.length ? (
@@ -102,7 +102,7 @@ export function CharacterSheet({
         </Row>
       </Section>
 
-      <Section title={`${t('skills')} · prof ${signed(profBonus(c))} · ${passivePerception(c)} ${locale === 'tr' ? 'pasif algı' : 'passive perception'}`}>
+      <Section title={`${t('skills')} · ${t('profBonus')} ${signed(profBonus(c))} · ${passivePerception(c)} ${t('passivePerception')}`}>
         <Card style={{ gap: 4 }}>
           {SKILL_IDS.map((s) => {
             const prof = c.skills.includes(s);
@@ -122,7 +122,7 @@ export function CharacterSheet({
       </Section>
 
       {c.spells.length ? (
-        <Section title={`${t('spells')} · DC ${spellSaveDc(c)} · ${signed(spellAttackMod(c))}`}>
+        <Section title={`${t('spells')} · ${t('spellDc', { n: spellSaveDc(c) })} · ${signed(spellAttackMod(c))}`}>
           <Row style={{ flexWrap: 'wrap' }}>
             {c.spellSlots.max.map((m, i) => (
               <View key={i} style={{ paddingHorizontal: space(3), paddingVertical: space(1), borderRadius: radius.pill, backgroundColor: colors.surface2 }}>
@@ -188,10 +188,10 @@ export function CharacterSheet({
                   {def?.type === 'weapon' ? (
                     <Txt variant="muted">
                       {def.damage}
-                      {def.versatileDamage ? `/${def.versatileDamage}` : ''} · {def.range ? `${def.range[0]}/${def.range[1]} ft` : 'melee'}
+                      {def.versatileDamage ? `/${def.versatileDamage}` : ''} · {def.range ? `${def.range[0]}/${def.range[1]} ${t('unitFt')}` : t('melee')}
                     </Txt>
                   ) : null}
-                  {def?.type === 'armor' ? <Txt variant="muted">{def.category === 'shield' ? '+2' : def.baseAc} AC</Txt> : null}
+                  {def?.type === 'armor' ? <Txt variant="muted">{t('armorAc', { n: def.category === 'shield' ? '+2' : def.baseAc })}</Txt> : null}
                 </View>
                 {onUse && usable ? <Button title={t('use')} small kind="secondary" onPress={() => onUse(i.uid)} /> : null}
                 {onEquip && equippable ? <Button title={i.equipped ? t('unequip') : t('equip')} small kind="ghost" onPress={() => onEquip(i.uid)} /> : null}
