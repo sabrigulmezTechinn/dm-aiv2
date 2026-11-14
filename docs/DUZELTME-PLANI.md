@@ -200,4 +200,15 @@ Bu testte kullanılan denge simülatörü projeye kalıcı bir komut olarak ekle
 
 Tutmayan hedef: zor modda Savaşçı ve Haydut kazanma oranı %35–55 aralığının üstünde. Fark sınıflar arası güçten geliyor; karşılaşmaları zorlaştırmak önce büyücüleri etkiliyor. Kapatmak için sınıfa özel bir ürün kararı gerekiyor.
 
-Plandan sapma: kolay moddaki tasarlanmış karşılaşmalar 5e "orta" bütçesine sığacak şekilde biraz hafifletildi (tüneller: tek iskelet, final: yalnız Varek). Zor mod plandaki listeyi kullanıyor.
+Plandan sapma: Plandaki karşılaşmaların bir kısmı, kahramanın o sahneye vardığındaki seviyede 5e karşılaşma bütçesini aşıyordu; bütçe onları zaten otomatik kırpacaktı. Karar B gereği tasarlanan karşılaşmalar bütçeye sığacak şekilde yeniden ayarlandı:
+
+| Sahne | Plan | Kolay | Zor |
+|---|---|---|---|
+| Söğütlü Han, mahzen | 1 dev sıçan | 1 dev sıçan | 1 dev sıçan |
+| Söğütlü Han, tüneller | 1 tarikatçı + 1 iskelet | 1 iskelet | 1 tarikatçı + 1 iskelet |
+| Söğütlü Han, final | Varek (yaklaşık CR 1/2, 22 HP) + 1 zombi | Yalnız Varek | Varek + 1 zombi |
+| Kayıp Kervan, yol | 1 kurt; zorda 2 kurt | 1 kurt | 1 kurt |
+| Kayıp Kervan, goblin mağarası | 2 goblin + Skrag | Yalnız Skrag | Skrag + 1 goblin |
+| Kayıp Kervan, ogre | Dövüşsüz engel | Dövüşsüz engel | Dövüşsüz engel |
+
+Skrag artık goblin şefi (CR 1, 200 XP) değerleriyle değil, kendine özel daha zayıf bir profille (CR 1/4, 50 XP) dövüşüyor; hikâyede hâlâ "goblin şefi" olarak geçiyor.
