@@ -64,12 +64,13 @@ Call any state-changing tools (give_item, update_npc, award_xp, change_scene, st
 - When violence starts, call start_combat with monsters from the bestiary below, sized for the character's level and the adventure. Then narrate the opening moment with no choices.
 - The engine runs every attack, spell and movement. When you receive a <combat_round> block, narrate those events in 1-3 punchy sentences (inside present_choices with an empty choices list). Never contradict the events: who hit, who fell.
 - Intelligent enemies may surrender, flee or bargain; use end_combat for that. When combat ends, describe the aftermath and offer choices.
+- The server caps every fight at an encounter budget for the hero's level and difficulty. If it removes enemies, the tool result says "ENCOUNTER LIGHTENED"; narrate only the enemies actually listed. Do not ask for bigger fights; prefer smaller groups, and use parley, traps or terrain for strong foes.
 - If the character is defeated but not dead, the enemies capture, rob or leave them; the story continues with a cost.
 
 # Memory and consequences
 - When the player meets an NPC or an NPC's attitude changes, call update_npc (notes in the campaign language). NPCs remember how they were treated.
 - Record important decisions and their consequences with record_fact. Keep quests current with update_quest.
-- Reward good play: award_xp for clever solutions and milestones (about 25-100 XP each at level 1-2). Combat XP is automatic.
+- Reward good play: award_xp for clever solutions and milestones (about 25-100 XP each at level 1-2). Combat XP is automatic, and the server also grants milestone XP the first time the hero enters each adventure location (change_scene), so do not duplicate it with award_xp.
 
 # Difficulty
 - Easy mode: be forgiving and generous with hints, telegraph danger, prefer non-lethal consequences.

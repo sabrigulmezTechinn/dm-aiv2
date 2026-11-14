@@ -15,6 +15,8 @@ import {
   isValidDice,
   itemName,
   longRest,
+  milestoneXpPlan,
+  trimToBudget,
   removeItem,
   roll,
   shortRest,
@@ -205,8 +207,15 @@ const handlers: { [K in Exclude<ToolName, 'present_choices' | 'request_check'>]:
     occ.delete(`${state.playerPos.x},${state.playerPos.y}`);
     const cctx = combatCtx(state, character);
     cctx.rng = ctx.rng;
+    // fix/combat-budget: cap the fight at the encounter budget for this level and mode.
+    const trim = trimToBudget(
+      input.enemies.map((e) => ({ monsterId: e.monster_id, count: e.count, name: e.name })),
+      character.level,
+      state.difficulty,
+    );
+    if (trim.lightened) sys(ctx, sx(state.locale, 'encounterLightened'));
     const { state: combat, result } = startCombat(cctx, {
-      enemies: input.enemies.map((e) => ({ monsterId: e.monster_id, count: e.count, name: e.name })),
+      enemies: trim.enemies,
       playerPos: state.playerPos,
       occupied: occ,
       surprise: input.surprise === 'none' ? undefined : input.surprise,
@@ -220,14 +229,17 @@ const handlers: { [K in Exclude<ToolName, 'present_choices' | 'request_check'>]:
       .map((c) => `${c.name} [${c.id}] ${MONSTERS[c.refId]?.name.en} HP ${c.hp}`)
       .join('; ');
     combat.pendingEvents = [];
+    const lightened = trim.lightened
+      ? ` ENCOUNTER LIGHTENED: the requested fight was above the ${state.difficulty} budget for a level ${character.level} hero, so ${trim.removed} enemy(ies) were removed by the server. Narrate only the enemies listed above.${trim.stillOver ? ' The remaining foe is still tough; give the player openings (terrain, retreat, parley).' : ''}`
+      : '';
     if (result.outcome) {
       const instruction = applyCombatOutcome(ctx, result.outcome, result.xp ?? 0);
       ctx.emitState();
-      return { content: `Combat started and the enemies acted first. Events: ${result.events.join(' ')} ${instruction}` };
+      return { content: `Combat started and the enemies acted first. Events: ${result.events.join(' ')} ${instruction}${lightened}` };
     }
     ctx.emitState();
     return {
-      content: `Combat started. Enemies: ${foes}. Events so far: ${result.events.join(' ')} It is now the player's turn. Narrate the opening moment of the fight in 1-3 sentences inside present_choices with an empty choices list. Do not describe attacks or damage; the engine handles them.`,
+      content: `Combat started. Enemies: ${foes}. Events so far: ${result.events.join(' ')} It is now the player's turn. Narrate the opening moment of the fight in 1-3 sentences inside present_choices with an empty choices list. Do not describe attacks or damage; the engine handles them.${lightened}`,
     };
   },
   end_combat(input, ctx) {
@@ -235,7 +247,7 @@ const handlers: { [K in Exclude<ToolName, 'present_choices' | 'request_check'>]:
     if (!state.combat || !state.map) return { content: 'No fight in progress.', isError: true };
     const res = rulesEndCombat(state.combat, combatCtx(state, character));
     const xp = input.outcome === 'player_escaped' ? 0 : res.xp ?? 0;
-    finishCombat(ctx, xp);
+    finishCombat(ctx, xp, 'info');
     return { content: `Combat ended (${input.outcome}). ${xp ? `Awarded ${xp} XP. ` : ''}${charSummary(character)}.` };
   },
   apply_damage(input, ctx) {
@@ -346,10 +358,13 @@ const handlers: { [K in Exclude<ToolName, 'present_choices' | 'request_check'>]:
     const def = input.scene_id ? adventure.scenes[input.scene_id] : undefined;
     if (input.scene_id && !def && !input.kind) return { content: `Unknown scene "${input.scene_id}". Known scenes: ${Object.keys(adventure.scenes).join(', ')}. To improvise, give name and kind.`, isError: true };
     const id = def ? def.id : input.scene_id ?? `scene_${uid('')}`;
+    // fix/combat-budget: a scene is "visited" once left (stashed) or while current.
+    const firstVisit = !!def && state.sceneId !== id && !state.scenes[id];
     enterScene(state, character, adventure, id, def ? undefined : { name: input.name ?? id, kind: (input.kind ?? 'outdoor') as SceneKind, description: input.description ?? '' });
     sys(ctx, sx(state.locale, 'sceneChange', { name: state.scene.name }));
+    const milestone = firstVisit ? awardMilestone(ctx, id) : '';
     ctx.emitState();
-    return { content: `Now at "${state.scene.name}" (${state.scene.kind}). ${state.map ? 'A map was generated; see the <map> block next turn.' : 'No map (open area).'} NPCs present: ${Object.values(state.npcs).filter((n) => n.present).map((n) => `${n.name} [${n.id}]`).join(', ') || 'none'}. Exits: ${def?.exits.join(', ') ?? 'improvise'}.` };
+    return { content: `${milestone}Now at "${state.scene.name}" (${state.scene.kind}). ${state.map ? 'A map was generated; see the <map> block next turn.' : 'No map (open area).'} NPCs present: ${Object.values(state.npcs).filter((n) => n.present).map((n) => `${n.name} [${n.id}]`).join(', ') || 'none'}. Exits: ${def?.exits.join(', ') ?? 'improvise'}.` };
   },
   rest(input, ctx) {
     const { state, character } = ctx;
@@ -396,7 +411,7 @@ export function applyCombatOutcome(ctx: TurnCtx, outcome: 'victory' | 'death' | 
     return 'The player character DIED. Narrate a dignified death scene, then call end_adventure with outcome "defeat" and a short epilogue.';
   }
   if (outcome === 'captured') {
-    finishCombat(ctx, 0);
+    finishCombat(ctx, 0, 'bad');
     character.hp = 1;
     character.conditions = character.conditions.filter((c) => c.id !== 'unconscious' && c.id !== 'stable');
     character.deathSaves = { successes: 0, failures: 0 };
@@ -408,8 +423,19 @@ export function applyCombatOutcome(ctx: TurnCtx, outcome: 'victory' | 'death' | 
   return 'The fight is over: VICTORY. Narrate the aftermath in a few sentences and offer choices (search the bodies, move on, tend wounds...).';
 }
 
+/** Milestone XP for the first entry into an adventure scene; returns a note for the DM. */
+function awardMilestone(ctx: TurnCtx, sceneId: string): string {
+  const { state, character, adventure } = ctx;
+  const amount = milestoneXpPlan(Object.keys(adventure.scenes), adventure.startScene)[sceneId] ?? 0;
+  if (amount <= 0 || character.status !== 'alive') return '';
+  const lv = awardXp(character, amount);
+  sys(ctx, sx(state.locale, 'xp', { n: amount, reason: sx(state.locale, 'milestone') }), 'good');
+  if (lv) sys(ctx, sx(state.locale, 'levelUp', { n: lv.to, hp: lv.hpGained }), 'good');
+  return `Milestone: +${amount} XP for reaching a new area.${lv ? ` LEVEL UP to ${lv.to} (new features: ${lv.newFeatures.join(', ') || 'none'}).` : ''} `;
+}
+
 /** Clears combat state and returns to exploration. */
-export function finishCombat(ctx: TurnCtx, xp: number): void {
+export function finishCombat(ctx: TurnCtx, xp: number, outcome: 'good' | 'info' | 'bad' = 'good'): void {
   const { state, character } = ctx;
   if (state.combat) {
     const pc = Object.values(state.combat.combatants).find((c) => c.kind === 'player');
@@ -417,7 +443,7 @@ export function finishCombat(ctx: TurnCtx, xp: number): void {
   }
   state.combat = null;
   character.conditions = character.conditions.filter((x) => !['dodging', 'disengaged', 'blessed', 'spirit_guardians', 'shielded', 'prone'].includes(x.id));
-  sys(ctx, sx(state.locale, 'combatEnd'), 'good');
+  sys(ctx, sx(state.locale, outcome === 'good' ? 'combatEnd' : outcome === 'bad' ? 'combatEndBad' : 'combatEndNeutral'), outcome);
   if (xp > 0) {
     const lv = awardXp(character, xp);
     sys(ctx, sx(state.locale, 'xp', { n: xp, reason: state.locale === 'tr' ? 'savaş' : 'combat' }), 'good');
