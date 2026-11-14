@@ -128,6 +128,16 @@ export const MONSTERS: Record<string, MonsterDef> = Object.fromEntries(
       traits: [], morale: 0.15, behavior: 'melee', color: '#4a2c17',
     },
     {
+      id: 'varek_thorn', name: { en: 'Varek Thorn', tr: 'Varek Thorn' },
+      description: { en: 'A gaunt, soft-spoken necromancer of the Pale Hand, stronger in will than in body.', tr: 'Soluk El tarikatının sırım gibi, yumuşak sesli ölü büyücüsü; bedeninden çok iradesi güçlü.' },
+      ac: 13, hp: '4d8+4', speed: 30, abilities: ab(10, 14, 12, 15, 12, 14), cr: '1/2', xp: 100,
+      attacks: [
+        { id: 'ritual_dagger', name: { en: 'Ritual Dagger', tr: 'Ayin Hançeri' }, toHit: 4, damage: '1d4+2', damageType: 'piercing', reach: 5, range: [20, 60] },
+        { id: 'grave_touch', name: { en: 'Grave Touch', tr: 'Mezar Dokunuşu' }, toHit: 4, damage: '1d6+2', damageType: 'necrotic', reach: 5 },
+      ],
+      traits: [], morale: 0.5, behavior: 'melee', color: '#2f3b2f',
+    },
+    {
       id: 'thug', name: { en: 'Thug', tr: 'Kabadayı' },
       description: { en: 'Hired muscle with a heavy mace.', tr: 'Ağır topuzlu kiralık kas.' },
       ac: 11, hp: '5d8+10', speed: 30, abilities: ab(15, 11, 14, 10, 10, 11), cr: '1/2', xp: 100,
