@@ -8,7 +8,8 @@
     "start": "tsx --env-file-if-exists=../../.env src/index.ts",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "serve": "tsx --env-file-if-exists=../../.env src/index.ts --web=../mobile/dist"
+    "serve": "tsx --env-file-if-exists=../../.env src/index.ts --web=../mobile/dist",
+    "sim": "tsx src/sim/cli.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.3.0",
