@@ -15,7 +15,7 @@ import {
 } from '@dmai/rules';
 import { useI18n } from '../../lib/i18n';
 import { colors, radius, space } from '../../lib/theme';
-import { Button, Chip, Row, Txt } from '../ui';
+import { Button, Chip, IconButton, Row, Txt } from '../ui';
 
 export type Targeting = { kind: 'attack' } | { kind: 'cast'; spellId: string } | null;
 
@@ -236,7 +236,7 @@ export function ActionPanel({
           </Row>
         ) : null}
         <Row gap={2}>
-          <Button title={t('rest')} icon="campfire" kind="ghost" small testID="rest-menu" onPress={() => setMenu(menu === 'rest' ? null : 'rest')} disabled={busy} />
+          <IconButton icon="campfire" label={t('rest')} active={menu === 'rest'} testID="rest-menu" onPress={() => !busy && setMenu(menu === 'rest' ? null : 'rest')} />
           <TextInput
             testID="action-input"
             value={text}
@@ -247,7 +247,7 @@ export function ActionPanel({
             editable={!busy && !view.needsRetry}
             returnKeyType="send"
             maxLength={600}
-            style={{ flex: 1, minHeight: 44, backgroundColor: colors.surface2, borderColor: colors.border, borderWidth: 1, borderRadius: radius.md, paddingHorizontal: space(3), color: colors.text, fontSize: 15 }}
+            style={{ flex: 1, flexShrink: 1, minWidth: 0, minHeight: 44, backgroundColor: colors.surface2, borderColor: colors.border, borderWidth: 1, borderRadius: radius.md, paddingHorizontal: space(3), color: colors.text, fontSize: 15 }}
           />
           <Button title="" icon="send" small onPress={send} disabled={busy || view.needsRetry || !text.trim()} testID="send" />
         </Row>
