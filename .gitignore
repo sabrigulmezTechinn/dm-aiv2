@@ -13,3 +13,4 @@ coverage/
 *.tsbuildinfo
 ios/
 android/
+.claude/worktrees/

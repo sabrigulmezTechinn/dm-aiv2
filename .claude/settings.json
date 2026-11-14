@@ -1,4 +1,13 @@
 {
   "model": "sonnet",
-  "advisorModel": "claude-fable-5-2"
+  "advisorModel": "claude-fable-5-2",
+  "permissions": {
+    "allow": [
+      "Bash(.claude/scripts/audit-snapshot.sh)",
+      "Bash(git checkout --detach *)",
+      "Bash(pnpm install --frozen-lockfile)",
+      "Bash(pnpm typecheck)",
+      "Bash(pnpm test)"
+    ]
+  }
 }
