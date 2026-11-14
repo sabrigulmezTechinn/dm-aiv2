@@ -123,6 +123,29 @@ export function applyDifficultyStart(c: Character, difficulty: Difficulty = 'har
   return c;
 }
 
+/** True when a character can die permanently: only on hard. On easy 0 HP means unconscious, and losing the fight means capture. */
+export function isPermadeath(difficulty: Difficulty = 'hard'): boolean {
+  return difficulty !== 'easy';
+}
+
+/**
+ * Resolves the third death save failure. Hard: the character dies. Easy: they stay at 0 HP,
+ * unconscious and stable (which the combat engine reports as a 'captured' outcome).
+ * Returns true if the character died. Mutates the character.
+ */
+export function resolveDeathSaveFailures(c: Character, permadeath: boolean): boolean {
+  if (c.deathSaves.failures < 3) return false;
+  if (permadeath) {
+    c.status = 'dead';
+    return true;
+  }
+  c.deathSaves.failures = 3;
+  c.hp = 0;
+  if (!c.conditions.some((x) => x.id === 'unconscious')) c.conditions.push({ id: 'unconscious' });
+  if (!c.conditions.some((x) => x.id === 'stable')) c.conditions.push({ id: 'stable' });
+  return false;
+}
+
 /** Death save failures added by a natural 1: 2 in 5e, 1 on easy. */
 export function natOneDeathSaveFailures(difficulty: Difficulty = 'hard'): number {
   return difficulty === 'easy' ? 1 : 2;
@@ -321,8 +344,10 @@ export interface DamageOutcome {
  * Applies damage to a character, handling temp HP, massive damage, relentless endurance and death saves.
  * With `massiveDamage: false` (easy mode) overflow damage never kills outright.
  */
-export function damageCharacter(c: Character, amount: number, opts: { massiveDamage?: boolean } = {}): DamageOutcome {
+export function damageCharacter(c: Character, amount: number, opts: { massiveDamage?: boolean; permadeath?: boolean } = {}): DamageOutcome {
   const massive = opts.massiveDamage ?? true;
+  // massiveDamage:false is only passed on easy, so it implies no permanent death unless stated.
+  const permadeath = opts.permadeath ?? massive;
   const out: DamageOutcome = { dealt: 0, dropped: false, died: false, relentless: false };
   if (c.status === 'dead' || amount <= 0) return out;
   let remaining = amount;
@@ -334,23 +359,20 @@ export function damageCharacter(c: Character, amount: number, opts: { massiveDam
   out.dealt = amount;
   if (c.hp === 0) {
     // Damage while at 0 HP causes a death save failure (2 on a critical is handled by caller).
-    if (massive && remaining >= c.maxHp) {
+    if (massive && permadeath && remaining >= c.maxHp) {
       c.status = 'dead';
       out.died = true;
     } else if (remaining > 0) {
       c.deathSaves.failures += 1;
       c.conditions = c.conditions.filter((x) => x.id !== 'stable');
-      if (c.deathSaves.failures >= 3) {
-        c.status = 'dead';
-        out.died = true;
-      }
+      if (resolveDeathSaveFailures(c, permadeath)) out.died = true;
     }
     return out;
   }
   const overflow = remaining - c.hp;
   c.hp = Math.max(0, c.hp - remaining);
   if (c.hp === 0) {
-    if (massive && overflow >= c.maxHp) {
+    if (massive && permadeath && overflow >= c.maxHp) {
       c.status = 'dead';
       out.died = true;
       return out;

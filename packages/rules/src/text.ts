@@ -36,6 +36,7 @@ const T = {
   deathSaveOk: { en: 'Death save success ({s}/{n}).', tr: 'Ölüm kurtarması başarılı ({s}/{n}).' },
   deathSaveFail: { en: 'Death save failure ({f}/3).', tr: 'Ölüm kurtarması başarısız ({f}/3).' },
   stable: { en: '{a} is stable.', tr: '{a} stabil durumda.' },
+  spared: { en: '{a} is out cold, but the enemies spare their life.', tr: '{a} bilincini yitirdi, ama düşmanlar canına kıymıyor.' },
   revive: { en: '{a} surges back to consciousness with 1 HP!', tr: '{a} 1 HP ile bilincine kavuştu!' },
   died: { en: '{a} has died.', tr: '{a} öldü.' },
   victory: { en: 'Victory! {xp} XP.', tr: 'Zafer! {xp} XP.' },

@@ -36,7 +36,7 @@ Oyunun görsel kimliği "dijital masa"dır. Kapalı mekânlar (taverna, zindan, 
 - Anonim hesap, cihazda saklanan oturum.
 - Karakter oluşturma: ırk, sınıf, yetenek puanları (standart dizi, puan satın alma, zar), beceri seçimi, başlangıç ekipmanı, renk.
 - Karakterler hesaba bağlıdır, kampanyadan bağımsızdır, farklı kampanyalarda tekrar kullanılabilir.
-- Karakter ölümü kalıcıdır. Ölen karakter "düştü" olarak arşivlenir, kampanya biter.
+- Karakter ölümü yalnızca zor modda kalıcıdır: ölen karakter "düştü" olarak arşivlenir, kampanya biter. Kolay modda kalıcı ölüm yoktur: 0 HP'de karakter bayılır; düşmanlar savaşı kazanırsa karakter esir düşer ve oyun devam eder.
 - Hazır maceralar (modüller) ile kampanya başlatma, zorluk seçimi (kolay, zor).
 - AI DM: anlatı, NPC diyaloğu, niyet yorumlama, kontrol isteme, şık üretme, sahne değiştirme, savaş başlatma, ödül ve XP verme, görev ve NPC hafızası.
 - Kural motoru: SRD 5.1 alt kümesi, seviye 1–5.
@@ -89,7 +89,7 @@ Oyunun görsel kimliği "dijital masa"dır. Kapalı mekânlar (taverna, zindan, 
 4. Düşman sıraları kural motoru tarafından oynanır.
 5. Her tur sonunda DM mekanik olayları kısa ve canlı biçimde anlatır.
 6. Tüm düşmanlar düştüğünde veya kaçtığında savaş biter, XP verilir.
-7. Oyuncu 0 HP'ye düşerse sırası geldiğinde ölüm kurtarma zarı atar. Kolay modda 2 başarı, zor modda 3 başarı ile stabilize olur. 3 başarısızlık ölümdür.
+7. Oyuncu 0 HP'ye düşerse sırası geldiğinde ölüm kurtarma zarı atar. Kolay modda 2 başarı, zor modda 3 başarı ile stabilize olur. Zor modda 3 başarısızlık ölümdür. Kolay modda 3 başarısızlık ölüm sayılmaz: karakter 0 HP'de baygın ve stabil kalır, savaş kaybedilmişse esir düşer.
 
 ## 7. Zorluk modları
 
@@ -100,6 +100,7 @@ Oyunun görsel kimliği "dijital masa"dır. Kapalı mekânlar (taverna, zindan, 
 | Düşman HP'si | %75 | %100 |
 | Stabilize olmak için başarı | 2 | 3 |
 | Büyük hasarla anında ölüm | Yok, oyuncu ölüm kurtarmasına düşer | Var (5e kuralı) |
+| Kalıcı ölüm | Yok: bayılma, kaybedilen savaşta esir düşme | Var: karakter ölünce kampanya biter |
 | Düşmanlar yerdeki oyuncuya saldırır mı | Hayır | Akıllı düşmanlar bazen |
 | Şıklarda kontrol ipucu | Beceri ve DC gösterilir | Sadece beceri |
 | DM tonu | Affedici, ipucu verir | Kurallara sıkı bağlı, ipucu az |

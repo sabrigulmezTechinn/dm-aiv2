@@ -21,6 +21,8 @@ import {
   featureUsesLeft,
   hasFeature,
   natOneDeathSaveFailures,
+  isPermadeath,
+  resolveDeathSaveFailures,
   healCharacter,
   initiativeMod,
   itemName,
@@ -63,6 +65,8 @@ export interface CombatResult {
   error?: string;
   outcome?: CombatOutcome;
   xp?: number;
+  /** Easy mode: the third death save failure did not kill; the character is unconscious and will be captured. */
+  spared?: boolean;
 }
 
 export interface EnemySpec {
@@ -392,10 +396,10 @@ function damagePlayer(state: CombatState, ctx: CombatCtx, amount: number, type: 
   let dmg = amount;
   if (type === 'poison' && RACES[c.race].traits.includes('poison_resilience')) dmg = Math.floor(dmg / 2);
   const wasDown = c.hp === 0;
-  const out = damageCharacter(c, dmg, { massiveDamage: ctx.difficulty === 'hard' });
+  const out = damageCharacter(c, dmg, { massiveDamage: ctx.difficulty === 'hard', permadeath: isPermadeath(ctx.difficulty) });
   if (wasDown && crit && c.status === 'alive') {
     c.deathSaves.failures += 1;
-    if (c.deathSaves.failures >= 3) c.status = 'dead';
+    if (resolveDeathSaveFailures(c, isPermadeath(ctx.difficulty))) out.died = true;
   }
   if (out.relentless) res.events.push(tx(ctx.locale, 'relentless', { t: c.name }));
   if (out.dropped) res.events.push(tx(ctx.locale, 'downed', { t: c.name }));
@@ -946,9 +950,14 @@ export function rollDeathSave(state: CombatState | null, ctx: CombatCtx): Combat
   }
   if (nat === 1 || (nat !== 20 && r.total < 10)) res.events.push(tx(ctx.locale, 'deathSaveFail', { f: Math.min(3, c.deathSaves.failures) }));
   if (c.deathSaves.failures >= 3) {
-    c.status = 'dead';
-    // In combat finishIfOver reports the death; outside combat report it here.
-    if (!state) res.events.push(tx(ctx.locale, 'died', { a: c.name }));
+    if (resolveDeathSaveFailures(c, isPermadeath(ctx.difficulty))) {
+      // In combat finishIfOver reports the death; outside combat report it here.
+      if (!state) res.events.push(tx(ctx.locale, 'died', { a: c.name }));
+    } else {
+      // Easy: no permanent death. The character stays unconscious and is captured if the fight is lost.
+      res.events.push(tx(ctx.locale, 'spared', { a: c.name }));
+      res.spared = true;
+    }
   } else if (c.deathSaves.successes >= needed && c.hp === 0) {
     if (!c.conditions.some((x) => x.id === 'stable')) c.conditions.push({ id: 'stable' });
     res.events.push(tx(ctx.locale, 'stable', { a: c.name }));

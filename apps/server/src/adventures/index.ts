@@ -23,3 +23,4 @@ export function adventureSummaries(): AdventureSummary[] {
 }
 
 export type { Adventure, AdventureScene, AdventureNpc } from './types';
+export { npcName, npcDescription, sceneEncounter } from './types';
