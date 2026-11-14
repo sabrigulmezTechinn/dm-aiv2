@@ -15,9 +15,11 @@
     "start": "pnpm --filter @dmai/server serve",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test",
-    "sim": "pnpm --filter @dmai/server sim"
+    "sim": "pnpm --filter @dmai/server sim",
+    "e2e": "node e2e/run.mjs"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "typescript": "~5.9.3",
     "vitest": "^3.2.4"
   }
