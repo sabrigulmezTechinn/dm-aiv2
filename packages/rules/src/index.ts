@@ -13,3 +13,4 @@ export * from './data/items';
 export * from './data/spells';
 export * from './data/monsters';
 export * from './data/conditions';
+export * from './encounter';
