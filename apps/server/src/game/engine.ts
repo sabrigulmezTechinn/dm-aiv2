@@ -433,7 +433,11 @@ export class GameEngine {
         state.heldResults = toolUses.map((t) => ({ type: 'tool_result', tool_use_id: t.id, content: 'Not executed.', is_error: true }));
         return;
       }
-      if (toolUses.length === 0) return;
+      if (toolUses.length === 0) {
+        // A text-only reply ends the turn: an ended campaign (e.g. a retried closing narration) must still release the character.
+        this.finalizeEnding(ctx);
+        return;
+      }
       const truncated = response.stopReason === 'max_tokens';
 
       const results: ToolResult[] = [];

@@ -162,6 +162,23 @@ describe('DM failure recovery', () => {
     checkProtocol(store.getCampaign(id)!.transcript);
   });
 
+  it('a retried closing narration that is plain text still releases the character', async () => {
+    const text = [{ type: 'text', text: 'The end.' }] as unknown as ContentBlock[];
+    const model = new ScriptedModel(['throw', text]);
+    const { act, store, id } = setup(model);
+    const row = store.getCampaign(id)!;
+    row.state.status = 'defeat';
+    row.state.unsent = { text: 'The hero has fallen. Narrate the end.' };
+    store.saveCampaign(row.state, row.transcript);
+    await act({ type: 'continue' }); // fails
+    const { view, ev } = await act({ type: 'continue' });
+    expect(ev.some((e) => e.type === 'error')).toBe(false);
+    expect(view.needsRetry).toBe(false);
+    expect(view.log.some((l) => l.kind === 'dm' && l.text === 'The end.')).toBe(true);
+    const character = store.getCharacter(store.getCampaign(id)!.state.characterId)!;
+    expect(character.activeCampaignId).toBeNull();
+  });
+
   it('transient errors keep the retry flow, non-transient ones free the player', async () => {
     const hdr = new Headers();
     const api = (status: number, type: string) => new Anthropic.APIError(status, { type: 'error', error: { type, message: 'm' } }, 'm', hdr);
