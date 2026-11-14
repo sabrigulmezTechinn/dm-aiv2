@@ -1,3 +1,4 @@
 {
+  "model": "sonnet",
   "advisorModel": "claude-fable-5-2"
 }
