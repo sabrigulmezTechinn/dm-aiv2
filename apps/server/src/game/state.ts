@@ -20,6 +20,7 @@ import { uid } from '@dmai/shared';
 import { MapGrid, computeVisible, emptyExplored, generateMap, maskMap, nearestFree, updateFog } from '@dmai/mapgen';
 import { MONSTERS, darkvision, movableTiles, playerCombatantId, isPlayerTurn, type CombatCtx } from '@dmai/rules';
 import type { Adventure } from '../adventures';
+import { npcDescription, npcName } from '../adventures/types';
 
 export type Transcript = Anthropic.Beta.Messages.BetaMessageParam[];
 export type ToolResult = Anthropic.Beta.Messages.BetaToolResultBlockParam;
@@ -191,7 +192,7 @@ export function enterScene(
   for (const npc of def?.npcs ?? []) {
     const existing = state.npcs[npc.id];
     if (existing && !existing.alive) continue;
-    const mem: NpcMemory = existing ?? { id: npc.id, name: npc.name, description: npc.description, attitude: npc.attitude, notes: [], present: true, alive: true };
+    const mem: NpcMemory = existing ?? { id: npc.id, name: npcName(npc, state.locale), description: npcDescription(npc, state.locale), attitude: npc.attitude, notes: [], present: true, alive: true };
     mem.present = true;
     state.npcs[npc.id] = mem;
     if (state.map) placeNpc(state, mem, npc.anchor);

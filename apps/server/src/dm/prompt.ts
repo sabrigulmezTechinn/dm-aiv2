@@ -18,6 +18,7 @@ import {
 } from '@dmai/rules';
 import { describeForDm } from '@dmai/mapgen';
 import type { Adventure } from '../adventures';
+import { npcDescription, npcName, sceneEncounter } from '../adventures/types';
 import { tokens, visibleSet, type CampaignState } from '../game/state';
 import { bestiaryLines, catalogLine } from './tools';
 
@@ -95,7 +96,7 @@ Skill ids: ${SKILL_IDS.join(', ')}. Ability ids: ${ABILITIES.join(', ')}.`;
 export function setupMessage(state: CampaignState, character: Character, adventure: Adventure): string {
   const lang = state.locale === 'tr' ? 'Turkish (Türkçe)' : 'English';
   const scenes = Object.values(adventure.scenes)
-    .map((s) => `- ${s.id} (${s.kind}): ${s.description} Exits: ${s.exits.join(', ')}.${s.encounter ? ` Suggested encounter: ${s.encounter.map((e) => `${e.count}x ${e.monsterId}${e.name ? ` "${e.name}"` : ''}`).join(', ')}.` : ''}${s.npcs.length ? ` NPCs: ${s.npcs.map((n) => `${n.name} [${n.id}] - ${n.description}`).join('; ')}.` : ''}`)
+    .map((s) => `- ${s.id} (${s.kind}): ${s.description} Exits: ${s.exits.join(', ')}.${sceneEncounter(s, state.difficulty) ? ` Suggested encounter: ${sceneEncounter(s, state.difficulty)!.map((e) => `${e.count}x ${e.monsterId}${e.name ? ` "${e.name}"` : ''}`).join(', ')}.` : ''}${s.npcs.length ? ` NPCs: ${s.npcs.map((n) => `${npcName(n, state.locale)} [${n.id}] - ${npcDescription(n, state.locale)}`).join('; ')}.` : ''}`)
     .join('\n');
   return `<setup>
 Campaign language: ${lang}. Write all narration, choices, NPC notes and quest text in this language.

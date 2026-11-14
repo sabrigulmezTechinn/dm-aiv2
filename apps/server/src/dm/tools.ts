@@ -9,6 +9,7 @@ import {
   addItem,
   awardXp,
   damageCharacter,
+  isPermadeath,
   damageTypeName,
   getItem,
   healCharacter,
@@ -254,7 +255,7 @@ const handlers: { [K in Exclude<ToolName, 'present_choices' | 'request_check'>]:
     const { state, character } = ctx;
     const r = roll(input.dice, { rng: ctx.rng, kind: 'damage', label: input.reason, actor: character.name });
     logRolls(ctx, [r]);
-    const out = damageCharacter(character, r.total, { massiveDamage: state.difficulty === 'hard' });
+    const out = damageCharacter(character, r.total, { massiveDamage: state.difficulty === 'hard', permadeath: isPermadeath(state.difficulty) });
     sys(ctx, sx(state.locale, 'damage', { n: r.total, type: damageTypeName(input.damage_type, state.locale), reason: input.reason }), 'bad');
     if (character.status === 'dead') {
       handleDeath(ctx, input.reason);

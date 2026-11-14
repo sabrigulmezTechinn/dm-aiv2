@@ -2,6 +2,7 @@ import type Anthropic from '@anthropic-ai/sdk';
 import type { Locale } from '@dmai/shared';
 import { uid } from '@dmai/shared';
 import type { Adventure } from '../adventures';
+import { sceneEncounter } from '../adventures/types';
 import type { CampaignState } from '../game/state';
 import type { ContentBlock, ModelClient, ModelRequest, ModelResponse, NarrationCallbacks } from './model';
 
@@ -117,7 +118,7 @@ export class MockModel implements ModelClient {
       ];
     }
     if (has('attack', 'fight', 'charge', 'saldır', 'hücum', 'vur', 'savaş') && !state.combat) {
-      const enc = scene?.encounter ?? [{ monsterId: 'goblin', count: 2 }];
+      const enc = (scene && sceneEncounter(scene, state.difficulty)) ?? [{ monsterId: 'goblin', count: 2 }];
       return [
         toolUse('start_combat', { enemies: enc.map((e) => ({ monster_id: e.monsterId, count: e.count, name: e.name })), surprise: 'none' }),
         toolUse('present_choices', { narration: L(locale, 'Weapons flash in the gloom as the fight begins!', 'Karanlıkta silahlar parlıyor, savaş başlıyor!'), choices: [] }),
