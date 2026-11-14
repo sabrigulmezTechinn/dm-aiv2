@@ -374,7 +374,7 @@ const handlers: { [K in Exclude<ToolName, 'present_choices' | 'request_check'>]:
     }
     if (state.combat) return { content: 'Cannot rest during combat.', isError: true };
     if (input.kind === 'short') {
-      const r = shortRest(character, ctx.rng);
+      const r = shortRest(character, ctx.rng, state.difficulty);
       sys(ctx, sx(state.locale, 'restShort', { hp: r.hpGained }), 'good');
     } else {
       longRest(character);

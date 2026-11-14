@@ -117,8 +117,14 @@ export const EASY_START_POTIONS = 2;
 /** Applies difficulty-specific campaign start bonuses (easy: 2 healing potions). Mutates and returns the character. */
 export function applyDifficultyStart(c: Character, difficulty: Difficulty = 'hard'): Character {
   if (difficulty === 'easy') {
-    addItem(c, 'healing_potion', EASY_START_POTIONS);
-    c.updatedAt = Date.now();
+    // Top up rather than add, so starting several easy campaigns doesn't stack potions:
+    // the class kit's potion plus EASY_START_POTIONS on the first campaign, no more afterwards.
+    const have = c.inventory.filter((i) => i.itemId === 'healing_potion').reduce((n, i) => n + i.qty, 0);
+    const missing = EASY_START_POTIONS + 1 - have;
+    if (missing > 0) {
+      addItem(c, 'healing_potion', missing);
+      c.updatedAt = Date.now();
+    }
   }
   return c;
 }

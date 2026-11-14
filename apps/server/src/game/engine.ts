@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import type { Character, CombatAction, PlayerAction, TurnEvent } from '@dmai/shared';
 import { uid } from '@dmai/shared';
 import {
+  applyDifficultyStart,
   CLASSES,
   castOutOfCombat,
   checkLabel,
@@ -70,6 +71,7 @@ export class GameEngine {
     // Restore the character between adventures.
     character.conditions = [];
     character.deathSaves = { successes: 0, failures: 0 };
+    applyDifficultyStart(character, params.difficulty);
     this.store.saveCharacter(character);
     this.store.saveCampaign(state, []);
     return toView(state, character, adventure);
